@@ -1,65 +1,82 @@
+library(roahd)
 library(readxl)
+library(MASS)
+library(rgl)
+library(DepthProc)
+library(hexbin)
+library(aplpack)
+library(robustbase)
+library(MDBED) 
+
+graphics.off()
 data=read_excel('trains_update_2610.xlsx')
 n=dim(data)[1]
 n
 p=dim(data)[2]
 p
 
-unique(data$service)
-length(which(data$service=='International'))
-
-summary(data$delay_cause_external_cause)
+considered_var=data$avg_delay_all_arriving
+summary(considered_var)
 years = unique(data$year)
 months = unique(data$month)
-#concentrarsi, solo per i treni nazionali: per ogni, per ogni mese, l'unità diviene la tratta specifica
 num_tratte = length(unique(data$route))
 cols = (length(unique(data$year)))*(length(unique(data$month)))
 dati_nuovi = matrix(nrow=num_tratte, ncol = cols)
 
+# Functional depth --------------------------------------------------------
 r = (unique(data$route))
 for (k in 1:num_tratte) {
   for (j in years) {
     for ( i in months){
-      if(length(data$delay_cause_rail_infrastructure[which(data$route==r[k] & data$year==j & data$month==i)])!=0)
-      dati_nuovi[k,(j-2015)*12 + (i)]=data$delay_cause_rail_infrastructure[which(data$route==r[k] & data$year==j & data$month==i)]
+      if(length(considered_var[which(data$route==r[k] & data$year==j & data$month==i)])!=0)
+        dati_nuovi[k,(j-2015)*12 + (i)]=considered_var[which(data$route==r[k] & data$year==j & data$month==i)]
     }
   }
   dati_nuovi[k,48]=r[k]
 }
 
-dati_nuovi=data.frame(dati_nuovi)
+dati_nuovi = data.frame(dati_nuovi)
+dati_nuovi = na.omit(dati_nuovi)
 
-fun = t(as.matrix(dati_nuovi[1:112,1:47]))
+fun = t(as.matrix(dati_nuovi[1:47]))
+fun = as.data.frame(fun)
+fun = as.data.frame(sapply(fun, as.numeric))
+time = 1:47
 
-x11()
-matplot(time,fun, type='l')
+f_data = fData(time, t(fun))
 
-
-f_data <- fData(time, t(fun))
-x11()
-plot(f_data)
-
-band_depth <- BD(Data = f_data) #in input va un FD, e ritorna un vector con la band depth di ogni elemento
-modified_band_depth <- MBD(Data = f_data) #in input va un FD, e ritorna un vector con la modified band depth di ogni elemento
-
-median_curve <- median_fData(fData = f_data, type = "MBD") # still an fData object: la mediana è la curva con la depth più alta
+band_depth = BD(Data = f_data)
+modified_band_depth = MBD(Data = f_data)
+median_curve = median_fData(fData = f_data, type = "MBD") # still an fData object
 
 x11()
 plot(f_data) 
-lines(time,median_curve$values, lwd=10)
+lines(time,median_curve$values, lwd=2)
 #lines(time,modified_band_depth, lwd=10, col='black')
 
-EI(f_data) #per ogni curva, calcola l'Epigraph Index 
-MEI(f_data) #per ogni curva, calcola il Modified EI
-HI(f_data) #per ogni curva, calcola l'Hypograph Index 
-MHI(f_data) #per ogni curva, calcola il modified Hypograph Index 
-
-#cor_spearman(f_data, ordering='MHI') #(puoi anche mettere MEI, che è la default)
-#se i FDs sono bivariati, dà uno scalare, sennò l'intera matrice
+# EI(f_data) #per ogni curva, calcola l'Epigraph Index 
+# MEI(f_data) #per ogni curva, calcola il Modified EI
+# HI(f_data) #per ogni curva, calcola l'Hypograph Index 
+# MHI(f_data) #per ogni curva, calcola il modified Hypograph Index 
 
 #outlier detection
-fbplot(f_data, adjust = T) 
-outliergram(f_data,adjust = T) 
+set.seed(22)
+x11()
+invisible(fbplot(f_data, main="Magnitude outliers",adjust = T))
+x11()
+invisible(outliergram(f_data,adjust = T))
+
+out_mag=fbplot(f_data, main="Magnitude outliers", display=FALSE)
+# bag is 50% more central observations, than we find fences
+out_mag$ID_outliers
+out_shape = outliergram(f_data, adjust=T, display = FALSE)
+out_shape$ID_outliers
+
+
+# Multivariate depth ------------------------------------------------------
+
+
+
 
 
 #### TRATTA A-B vs TRATTA B-A ####
