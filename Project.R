@@ -16,7 +16,7 @@ num_tratte = length(unique(data$route))
 cols = (length(unique(data$year)))*(length(unique(data$month)))
 dati_nuovi = matrix(nrow=num_tratte, ncol = cols)
 
-r=(unique(data$route))
+r = (unique(data$route))
 for (k in 1:num_tratte) {
   for (j in years) {
     for ( i in months){
@@ -30,7 +30,6 @@ for (k in 1:num_tratte) {
 dati_nuovi=data.frame(dati_nuovi)
 
 fun = t(as.matrix(dati_nuovi[1:112,1:47]))
-time=1:47
 
 x11()
 matplot(time,fun, type='l')
