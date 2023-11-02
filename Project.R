@@ -75,6 +75,8 @@ out_shape$ID_outliers
 
 # Multivariate depth ------------------------------------------------------
 
+# delay on arrival (all o solo in ritardo) e cancelled trains
+# valutare eventi estremi (>30/60)
 
 
 
