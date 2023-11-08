@@ -1,5 +1,10 @@
+library(readxl)
 data=read_excel('trains_update_2610.xlsx')
 N=dim(data)[1]
+set.seed(1)
+
+#cose dA VEDERE:
+#punto 2_1
 
 finestra_grafica=function(t){
   if(t==0) quartz()
@@ -28,6 +33,7 @@ g2 = length(which(servizio==livelli_servizio[1])) #cardinalità internazionali
 
 #tutta la prima parte di analisi valuta risposte univariate
 
+#PUNTO 1
 ###primo caso: valuto il numero di treni cancellati (che è una variabile intera) vs categoria
 colnames(data)
 #s = 8
@@ -63,10 +69,10 @@ d1_int$stats
 length(d1_int$out)  #80/608 outliers
 summary(d1_int$out) #media di 17.32 treni cancellati negli outlier
 
-#le due distrinuzioni sembrano essere differenti: sebbene la proporzione di dati che sono outliers sia la stessa
+#le due distribuzioni sembrano essere differenti: sebbene la proporzione di dati che sono outliers sia la stessa
 #nei due gruppi: per essere un outlier dei viaggi nazionali, devi avere almeno 10 cancellazioni, mentre
 #per i viaggi internazionali, almeno 2: da questa prima analisi molto terra-terra, si evince come
-#un treno nazionale sia più facilmente soggetto a cancellazioni
+#un treno nazionale sia più facilmente soggetto a cancellazioni: sarà probabilmente dovuto al fatto che ne partono di più
 
 #voglio vedere se vi sia una differenza: come prima cosa controllo se le due distribuzioni possano essere
 #considerate circa simili, usando come statistica del permutation test la differenza delle mediane
@@ -96,12 +102,12 @@ perm_median_test=function(x,y,iter=1e3){
   
 }
 
-perm_median_test(x,y)
-#questo è il pvalue: the two distributions are different since they have two different medians
 
 x=nazionali_1
 y=internazionali_1
 iter=1e3
+perm_median_test(x,y)
+#questo è il pvalue: the two distributions are different since they have two different medians
 T0=abs(median(x)-median(y))  # test statistic: here we use the medians instead of the means
 T_stat=numeric(iter)
 x_pooled=c(x,y)
@@ -128,36 +134,363 @@ abline(v=T0,col=3,lwd=4)
 
 #per ultima cosa, fitto un'ANOVA non parametrica
 B=1e4
-fit <- aov(num_of_canceled_trains ~ service, data = dati_1)
-summary(fit)
+fit_1 <- aov(num_of_canceled_trains ~ service, data = dati_1)
+summary(fit_1)
 
-T0 <- summary(fit)[[1]][1,4]  # extract the test statistic
-T0
+T0_1 <- summary(fit_1)[[1]][1,4]  # extract the test statistic
+T0_1
 #To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
-T_stat <- numeric(B) 
+T_stat_1 <- numeric(B) 
 n <- dim(dati_1)[1]
 
 for(perm in 1:B){
   # Permutation:
   permutation <- sample(1:n)
   num_canc_perm <- dati_1$num_of_canceled_trains[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
-  fit_perm <- aov(num_canc_perm ~ service,data = dati_1)
+  fit_perm <- aov(num_canc_perm ~ dati_1$service )
   
   # Test statistic:
-  T_stat[perm] <- summary(fit_perm)[[1]][1,4]
+  T_stat_1[perm] <- summary(fit_perm)[[1]][1,4]
 }
 
 #plot of the permutational distribution
 finestra_grafica(t)
-hist(T_stat,xlim=range(c(T_stat,T0)),breaks=30)
-abline(v=T0,col=3,lwd=2)
+hist(T_stat_1,xlim=range(c(T_stat_1,T0_1)),breaks=30, main='Permutational distribution of statistic in the ANOVA_1')
+abline(v=T0_1,col=3,lwd=2)
 
 finestra_grafica(t)
-plot(ecdf(T_stat),xlim=c(-1,20))
-abline(v=T0,col=3,lwd=4)
+plot(ecdf(T_stat_1),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_1')
+abline(v=T0_1,col=3,lwd=4)
 
 # p-value
-p_val <- sum(T_stat>=T0)/B
-p_val
+p_val_1 <- sum(T_stat>=T0_1)/B
+p_val_1
+#il pvalue è circa 0: il numero di treni cancellati nelle due tipologie di tratte è diverso
 
-#il fatto che la tratta sia nazionale/internazionale influenza pesantemente il numero di treni cancellati
+
+#PUNTO 1_1
+#il fatto che la tratta sia nazionale/internazionale influenza pesantemente il numero di treni cancellati: però potrebbe essere
+#un qualcosa dovuto semplicemente al fatto che vi siano più treni nazionali piuttosto che internazionali: ripeto la stessa identica
+#analisi prendendo come variabile di risposta il numero di treni_cancellati/numero di treni totali per ogni tratta
+dati_1_1 = data.frame( prop_of_canceled_trains = data$num_of_canceled_trains/data$total_num_trips,service = servizio, row.names = tratte)
+nazionali_1_1 = dati_1_1[which(dati_1$service==livelli_servizio[2]),1]
+internazionali_1_1 = dati_1_1[which(dati_1$service==livelli_servizio[1]),1]
+
+finestra_grafica(t)
+d1_1=boxplot(prop_of_canceled_trains ~ service, data = dati_1_1)
+d1_1$stats
+#anche in questo caso sembra esservici un differenza nelle due distribuzioni
+
+d1_1_naz=boxplot(nazionali_1_1)
+d1_1_naz$stats
+length(d1_1_naz$out)  #573/4854 outliers
+summary(d1_1_naz$out) #media di 0.18848% dei treni cancellati negli outlier
+
+
+d1_1_int=boxplot(internazionali_1_1)
+d1_1_int$stats
+length(d1_1_int$out)  #92/608 outliers
+summary(d1_1_int$out) #media di 0.14756% treni cancellati negli outlier
+#negli outliers, le distribuzioni sembrano essersi "avvicinate"
+
+
+#ANOVA nonparametrica per vedere se vi siano differenze nelle proporzioni di treni cancellati lungo i 4 anni
+B=1e4
+fit_1_1 <- aov(prop_of_canceled_trains ~ service, data = dati_1_1)
+summary(fit_1_1)
+
+T0_1_1 <- summary(fit_1_1)[[1]][1,4]  # extract the test statistic
+T0_1_1
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_1_1 <- numeric(B) 
+n <- dim(dati_1_1)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  prop_canc_perm <- dati_1_1$prop_of_canceled_trains[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(prop_canc_perm ~ dati_1_1$service) 
+  
+  # Test statistic:
+  T_stat_1_1[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_1_1,xlim=range(c(T_stat_1_1,T0_1_1)),breaks=30, main='Permutational distribution of statistic in the ANOVA_1_1')
+abline(v=T0_1_1,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_1_1),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_1_1')
+abline(v=T0_1_1,col=3,lwd=4)
+
+# p-value
+p_val_1_1 <- sum(T_stat_1_1>=T0_1_1)/B
+p_val_1_1
+
+#il p-value è abbastanza alto in questo caso, circq 17%: non ho evidenza per rifiutare l'ipotesi secondo cui
+#la proporzione di treni cancellati differisca tra tratte nazionali ed internazionali
+
+
+#PUNTO 2_1
+#Adesso faccio esattamente lo stesso ragionamento per il numero di treni in ritardo:
+#valuto essenzialmente la proporzione di essi: per prima cosa quelli che partono in ritardo
+dati_2_1 = data.frame( prop_of_late_at_departure_trains = data$num_late_at_departure/data$total_num_trips,service = servizio, row.names = tratte)
+nazionali_2_1 = dati_2_1[which(dati_2_1$service==livelli_servizio[2]),1]
+internazionali_2_1 = dati_2_1[which(dati_2_1$service==livelli_servizio[1]),1]
+
+finestra_grafica(t)
+d2_1=boxplot(prop_of_late_at_departure_trains ~ service, data = dati_2_1)
+d2_1$stats
+#sembra che in media siano circa uguali, sebbene il terzo percentile degli internazionali sia circa lo 0.237
+#mentre quello dei nazionali 0.176
+
+finestra_grafica(t)
+d2_1_naz=boxplot(nazionali_2_1)
+d2_1_naz$stats
+length(d2_1_naz$out)  #402/4854=0.08281829 sono outliers
+summary(d2_1_naz$out) #media di 0.5262 dei treni in ritardo negli outlier per i nazionali
+
+finestra_grafica(t)
+d2_1_int=boxplot(internazionali_2_1)
+d2_1_int$stats
+length(d2_1_int$out)  #61/608=0.1003289 sono outliers
+summary(d2_1_int$out) #media di 0.7479 treni in ritardo negli outlier
+#negli outliers, che in proporzione sono circa lo stesso numero, la proporzione è molto molto 
+#diversa rispetto ai valori nei box: ci sono delle tratte specifiche in cui
+#i treni tendono a partire maggiormente in ritardo, in maniera quasi dominante
+
+
+#ANOVA nonparametrica per vedere se vi siano differenze nelle proporzioni di treni in ritardo alla partenza lungo i 4 anni
+B=1e4
+fit_2_1 <- aov(prop_of_late_at_departure_trains ~ service, data = dati_2_1)
+summary(fit_2_1)
+
+T0_2_1 <- summary(fit_2_1)[[1]][1,4]  # extract the test statistic
+T0_2_1
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_2_1 <- numeric(B) 
+n <- dim(dati_2_1)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  prop_of_late_at_departure_perm <- dati_2_1$prop_of_late_at_departure_trains[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(prop_of_late_at_departure_perm ~ dati_2_1$service) 
+  
+  # Test statistic:
+  T_stat_2_1[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_2_1,xlim=range(c(T_stat_2_1,T0_2_1)),breaks=30, main='Permutational distribution of statistic in the ANOVA_2_1')
+abline(v=T0_2_1,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_2_1),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_2_1')
+abline(v=T0_2_1,col=3,lwd=4)
+
+# p-value
+p_val_2_1 <- sum(T_stat_2_1>=T0_2_1)/B
+p_val_2_1
+#pvalue circa 0: la proporzione di treni in ritardo alla partenza è maggiore nei viaggi internazionali
+#piuttosto che quella di quelli nazionali
+
+#sarebbe interessante vedere bene questi outliers
+
+
+
+#PUNTO 2_2
+#valuto essenzialmente la proporzione di treni che arrivano in ritardo
+dati_2_2 = data.frame( prop_of_late_at_arriving_trains = data$num_arriving_late/data$total_num_trips,service = servizio, row.names = tratte)
+nazionali_2_2 = dati_2_2[which(dati_2_2$service==livelli_servizio[2]),1]
+internazionali_2_2 = dati_2_2[which(dati_2_2$service==livelli_servizio[1]),1]
+
+finestra_grafica(t)
+d2_2=boxplot(prop_of_late_at_arriving_trains ~ service, data = dati_2_2)
+d2_2$stats
+#le due distribuzioni sembrano essere circa simili, sebbene vi sono molti più outliers, in proporzione
+#per i viaggi internazionali (sensata come cosa, dal momento che essendo un viaggio più lungo potrebbero
+#occorrere più imprevisti)
+
+finestra_grafica(t)
+d2_2_naz=boxplot(nazionali_2_2)
+d2_2_naz$stats
+length(d2_2_naz$out)  #104/4854 outliers
+summary(d2_2_naz$out) #media di 0.3743 dei treni in ritardo negli outlier per i nazionali
+
+finestra_grafica(t)
+d2_2_int=boxplot(internazionali_2_2)
+d2_2_int$stats
+length(d2_2_int$out)  #21/608 outliers
+summary(d2_2_int$out) #media di 0.4381 treni in ritardo negli outlier
+
+#ANOVA nonparametrica per vedere se vi siano differenze nelle proporzioni di treni in ritardo all'arrivo lungo i 4 anni
+B=1e4
+fit_2_2 <- aov(prop_of_late_at_arriving_trains ~ service, data = dati_2_2)
+summary(fit_2_2)
+
+T0_2_2 <- summary(fit_2_2)[[1]][1,4]  # extract the test statistic
+T0_2_2
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_2_2 <- numeric(B) 
+n <- dim(dati_2_2)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  prop_of_late_at_arriving_perm <- dati_2_2$prop_of_late_at_arriving_trains[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(prop_of_late_at_arriving_perm ~ dati_2_2$service) 
+  
+  # Test statistic:
+  T_stat_2_2[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_2_2,xlim=range(c(T_stat_2_2,T0_2_2)),breaks=30, main='Permutational distribution of statistic in the ANOVA_2_2')
+abline(v=T0_2_2,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_2_2),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_2_2')
+abline(v=T0_2_2,col=3,lwd=4)
+
+# p-value
+p_val_2_2 <- sum(T_stat_2_2>=T0_2_2)/B
+p_val_2_2
+#il pvalue è circa 0.0066: puoi considerare le medie delle due proporzioni essere uguali
+
+#cosa si è ottenuto da questi due punti: che la proporzione di treni nazionali che partono in ritardo
+#è maggiore di quella degli internazionali, con alcune tratte in cui il ritardo è quasi una costante
+#di contro, nei due tipi di servizi, la proporzione di treni che arrivano in ritardo è circa
+#uguale, sebbene la percentuale di outliers internazionali sia maggiore (una tratta più lunga è
+#verosimilmente maggiormante soggetta ad imprevisti)
+#IMPORTANTE: in questo caso, è bene notare come outliers=maggior numero di treni in ritardo/cancellati
+
+#LIMITE DI TUTTO CIO': NULLA CI DICE CHE SE NUMERO_PARTENZE_TARDI=NUMERO_ARRIVI_TARDI, SIGNIFICA
+#CHE TUTTI I TRENI PARTITI TARDI SIANO ANCHE ARRIVATI TARDI, ECT
+#UN TRENO CHE PARTE TARDI PUO' ARRIVARE IN ORARIO O MENO, COSI' COME UNO CHE PARTE GIUSTO PUO'
+#ARRIVARE TARDI O MENO: L'ANALISI VA TENUTA SEPARATA
+
+
+#PUNTO 3_1
+#In questo caso voglio valutare il ritardo medio alla partenza tra tutti i treni in ritardo,
+#a seconda del tipo di servizio erogato
+dati_3_1 = data.frame( avg_delay_dep = data$avg_delay_late_at_departure,service = servizio, row.names = tratte)
+nazionali_3_1 = dati_3_1[which(dati_3_1$service==livelli_servizio[2]),1]
+internazionali_3_1 = dati_3_1[which(dati_3_1$service==livelli_servizio[1]),1]
+
+finestra_grafica(t)
+d3_1=boxplot(avg_delay_dep ~ service, data = dati_3_1)
+d3_1$stats
+#i box sembrano essere circa simili, sebbene il ritardo medio sia leggermente più alto per
+#i nazionali tra i treni che partono in ritardo
+
+finestra_grafica(t)
+d3_1_naz=boxplot(nazionali_3_1)
+d3_1_naz$stats
+length(d3_1_naz$out)  #180/4854=0.03708282 sono outliers
+summary(d3_1_naz$out) #media di 42.77 minuti di ritardo dei treni in ritardo negli outlier per i nazionali
+
+finestra_grafica(t)
+d3_1_int=boxplot(internazionali_3_1)
+d3_1_int$stats
+length(d3_1_int$out)  #26/608=0.04276316 outliers
+summary(d3_1_int$out) #media di 54.76 di minuti di ritardo per treni in ritardo negli outlier
+dati_3_1[which(dati_3_1$avg_delay_dep==(max(dati_3_1$avg_delay_dep))),]
+dati_3_1[which(dati_3_1$avg_delay_dep==(max(dati_3_1[-which(dati_3_1$avg_delay_dep==(max(dati_3_1$avg_delay_dep))),]$avg_delay_dep))),]
+#è importante notare come vi siano questi due valori che sono palesemnete due casi eccezionali:
+#adesso provo a valutare il tutto con e senza queste due unità
+
+#ANOVA nonparametrica per vedere se vi siano differenze nei ritardi medi di treni in ritardo alla partenza lungo i 4 anni
+#tengo tutti i dati
+B=1e4
+fit_3_1_1 <- aov(avg_delay_dep ~ service, data = dati_3_1)
+summary(fit_3_1_1)
+
+T0_3_1_1 <- summary(fit_3_1_1)[[1]][1,4]  # extract the test statistic
+T0_3_1_1
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_3_1_1 <- numeric(B) 
+n <- dim(dati_3_1)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  avg_delay_dep_perm <- dati_3_1$avg_delay_dep[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(avg_delay_dep_perm ~ dati_3_1$service) 
+  
+  # Test statistic:
+  T_stat_3_1_1[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_3_1_1,xlim=range(c(T_stat_3_1_1,T0_3_1_1)),breaks=30, main='Permutational distribution of statistic in the ANOVA_3_1')
+abline(v=T0_3_1_1,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_3_1_1),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_3_1')
+abline(v=T0_3_1_1,col=3,lwd=4)
+
+# p-value
+p_val_3_1_1 <- sum(T_stat_3_1_1>=T0_3_1_1)/B
+p_val_3_1_1
+#il pvalue=0.5929 è molto alto: posso considerare le due medie come uguali.
+#Ora però provo a togliere quelle due osservazioni
+
+#PUNTO 3_1_2
+#tolgo quelle due osservazioni
+i1=which(dati_3_1$avg_delay_dep==(max(dati_3_1$avg_delay_dep)))
+i2=which(dati_3_1$avg_delay_dep==(max(dati_3_1[-which(dati_3_1$avg_delay_dep==(max(dati_3_1$avg_delay_dep))),]$avg_delay_dep)))
+dati_3_1_2 = dati_3_1[-c(i1,i2),]
+nazionali_3_1_2 = dati_3_1_2[which(dati_3_1_2$service==livelli_servizio[2]),1]
+internazionali_3_1_2 = dati_3_1_2[which(dati_3_1_2$service==livelli_servizio[1]),1]
+
+finestra_grafica(t)
+d3_1_2=boxplot(avg_delay_dep ~ service, data = dati_3_1_2)
+d3_1_2$stats
+
+#ANOVA
+B=1e4
+fit_3_1_2 <- aov(avg_delay_dep ~ service, data = dati_3_1_2)
+summary(fit_3_1_2)
+
+T0_3_1_2 <- summary(fit_3_1_2)[[1]][1,4]  # extract the test statistic
+T0_3_1_2
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_3_1_2 <- numeric(B) 
+n <- dim(dati_3_1_2)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  avg_delay_dep_perm <- dati_3_1_2$avg_delay_dep[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(avg_delay_dep_perm ~ dati_3_1_2$service) 
+  
+  # Test statistic:
+  T_stat_3_1_2[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_3_1_2,xlim=range(c(T_stat_3_1_2,T0_3_1_2)),breaks=30, main='Permutational distribution of statistic in the ANOVA_3_1_2')
+abline(v=T0_3_1_2,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_3_1_2),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_3_1_2')
+abline(v=T0_3_1_2,col=3,lwd=4)
+
+# p-value
+p_val_3_1_2 <- sum(T_stat_3_1_2>=T0_3_1_2)/B
+p_val_3_1_2
+#pvalue=0.0792: nonostante siano stati tolti quei due outliers, il ritardo medio dei treni in ritardo alla partenza 
+#è lo stesso
+
+
+#PUNTO 3_2
+#Ora valuto il ritardo sui treni all'arrivo
+
+#prossimi punti: -ritardi all'arrivo
+#                -cause dei ritardi (MANOVA)
