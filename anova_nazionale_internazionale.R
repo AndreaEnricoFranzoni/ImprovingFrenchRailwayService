@@ -5,6 +5,7 @@ set.seed(1)
 
 #cose dA VEDERE:
 #punto 2_1
+#punto 3_2: come trattare quegli outliers nazionali?
 
 finestra_grafica=function(t){
   if(t==0) quartz()
@@ -16,9 +17,9 @@ t = 0 #0 per quartz, 1 per x11(): unica volta in cui viene usata la variabile t
 library(tidyverse) #libreria che serve per lavorare con le stringhe
 #io considero le unità definite unicamente da tratta_mese_anno: quindi ho n unità: le posso considerare tra loro indipendenti
 
-tratte = vector(mode = "character", length = n)
+tratte = vector(mode = "character", length = N)
 
-for (i in 1:n) {
+for (i in 1:N) {
   tratte[i]=paste(data$route[i],paste(data$year[i], data$month[i], sep = " "), sep = " / ")
 }
 
@@ -30,7 +31,7 @@ g=length(livelli_servizio)
 g1 = length(which(servizio==livelli_servizio[2])) #cardinalità nazionali
 g2 = length(which(servizio==livelli_servizio[1])) #cardinalità internazionali
 
-
+#fino a qui va fatto runnare, poi ogni punto può essere fatto runnare a parte
 #tutta la prima parte di analisi valuta risposte univariate
 
 #PUNTO 1
@@ -359,7 +360,7 @@ abline(v=T0_2_2,col=3,lwd=4)
 # p-value
 p_val_2_2 <- sum(T_stat_2_2>=T0_2_2)/B
 p_val_2_2
-#il pvalue è circa 0.0066: puoi considerare le medie delle due proporzioni essere uguali
+#il pvalue è circa 0.0066: puoi considerare le distribuzioni delle due proporzioni circa uguali
 
 #cosa si è ottenuto da questi due punti: che la proporzione di treni nazionali che partono in ritardo
 #è maggiore di quella degli internazionali, con alcune tratte in cui il ritardo è quasi una costante
@@ -382,7 +383,7 @@ nazionali_3_1 = dati_3_1[which(dati_3_1$service==livelli_servizio[2]),1]
 internazionali_3_1 = dati_3_1[which(dati_3_1$service==livelli_servizio[1]),1]
 
 finestra_grafica(t)
-d3_1=boxplot(avg_delay_dep ~ service, data = dati_3_1)
+d3_1=boxplot(avg_delay_dep ~ service, data = dati_3_1, main='Boxplot ritardi alla partenza')
 d3_1$stats
 #i box sembrano essere circa simili, sebbene il ritardo medio sia leggermente più alto per
 #i nazionali tra i treni che partono in ritardo
@@ -391,13 +392,15 @@ finestra_grafica(t)
 d3_1_naz=boxplot(nazionali_3_1)
 d3_1_naz$stats
 length(d3_1_naz$out)  #180/4854=0.03708282 sono outliers
-summary(d3_1_naz$out) #media di 42.77 minuti di ritardo dei treni in ritardo negli outlier per i nazionali
+summary(d3_1_naz$out) #media di 42.77 minuti di ritardo dei treni in ritardo negli outlier per i nazionali:
+#la media del ritardo si alza di 26.77 minuti
 
 finestra_grafica(t)
 d3_1_int=boxplot(internazionali_3_1)
 d3_1_int$stats
 length(d3_1_int$out)  #26/608=0.04276316 outliers
-summary(d3_1_int$out) #media di 54.76 di minuti di ritardo per treni in ritardo negli outlier
+summary(d3_1_int$out) #media di 54.76 di minuti di ritardo per treni in ritardo negli outlier:
+#la media del ritardo si alza di 40.2297 minuti
 dati_3_1[which(dati_3_1$avg_delay_dep==(max(dati_3_1$avg_delay_dep))),]
 dati_3_1[which(dati_3_1$avg_delay_dep==(max(dati_3_1[-which(dati_3_1$avg_delay_dep==(max(dati_3_1$avg_delay_dep))),]$avg_delay_dep))),]
 #è importante notare come vi siano questi due valori che sono palesemnete due casi eccezionali:
@@ -437,7 +440,7 @@ abline(v=T0_3_1_1,col=3,lwd=4)
 # p-value
 p_val_3_1_1 <- sum(T_stat_3_1_1>=T0_3_1_1)/B
 p_val_3_1_1
-#il pvalue=0.5929 è molto alto: posso considerare le due medie come uguali.
+#il pvalue=0.5929 è molto alto: posso considerare le due distribuzioni come uguali.
 #Ora però provo a togliere quelle due osservazioni
 
 #PUNTO 3_1_2
@@ -490,7 +493,223 @@ p_val_3_1_2
 
 
 #PUNTO 3_2
-#Ora valuto il ritardo sui treni all'arrivo
+#Ora valuto il ritardo sui treni all'arrivo, tra i treni in ritardo
+dati_3_2 = data.frame( avg_delay_arr = data$avg_delay_late_on_arrival,service = servizio, row.names = tratte)
+nazionali_3_2 = dati_3_2[which(dati_3_2$service==livelli_servizio[2]),1]
+internazionali_3_2 = dati_3_2[which(dati_3_2$service==livelli_servizio[1]),1]
 
-#prossimi punti: -ritardi all'arrivo
-#                -cause dei ritardi (MANOVA)
+finestra_grafica(t)
+d3_2=boxplot(avg_delay_arr ~ service, data = dati_3_2, main="Boxplot ritardo all'arrivo")
+d3_2$stats
+#i box sembrano essere circa simili, sebbene il ritardo medio sia leggermente più alto per
+#gli internazionali tra i treni che arrivano in ritardo
+
+finestra_grafica(t)
+d3_2_naz=boxplot(nazionali_3_2)
+d3_2_naz$stats
+length(d3_2_naz$out)  #136/4854=0.02801813 sono outliers
+summary(d3_2_naz$out) #media di 73.63 minuti di ritardo dei treni in ritardo negli outlier per i nazionali
+#la media del ritardo all'arrivo si alza di 43.04134 minuti
+
+finestra_grafica(t)
+d3_2_int=boxplot(internazionali_3_2)
+d3_2_int$stats
+length(d3_2_int$out)  #23/608=0.03782895 outliers
+summary(d3_2_int$out) #media di 81.79 di minuti di ritardo per treni in ritardo negli outlier:
+#la media del ritardo all'arrivo si alza di 49.94159
+
+#prima ho detto che l'analisi di ritardo in partenza e in arrivo vada fatta separatamente: 
+#è verosimile che un treno che parte con 2/3 minuti di ritardo arrivi in orario, recuperando. O viceversa,
+#anche se parte in orario, che arrivi con un piccolo ritardo. Pertanto non è possibile stabilire una corrispondenza
+#fra la proporzione di treni in ritardo all'andata e all'arrivo.
+#Ovviamente è sensato però che treni che abbiano un grande ritardo fin dalla partenza possano si recuperare qualcosa,
+#ma è più verosimile che possano accumularne ancora.
+#Queso boxplot mostra proprio questo: di come il ritardo medio all'arrivo sia maggiore di quello alla partenza,
+#di come entrambi i baffi del boxplot si alzino
+
+finestra_grafica(t)
+par(mfrow=c(1,2))
+boxplot(avg_delay_dep ~ service, data = dati_3_1, main='Average delay at the departure', ylim=c(0,300), col=c('blue','red'), xlab='Type of route', ylab='Minutes')
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+boxplot(avg_delay_arr ~ service, data = dati_3_2, main="Average delay at the arrival", ylim=c(0,300), col=c('blue','red'),  xlab='Type of route', ylab='Minutes')
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+
+#inoltre, penso sia importante notare come, 'ad occhio', i treni internazionali sembrano semplicemente
+#accumulare del ritardo, mentre vi sono delle treni nazionali, in un determinato mese, che hanno
+#un aumento gigante del ritardo (la proporzione di outliers è circa la stessa): bisogna concentrarsi su questi
+
+
+
+#ANOVA nonparametrica per vedere se vi siano differenze nei ritardi medi di treni in ritardo all'arrivo lungo i 4 anni
+#tengo tutti i dati
+B=1e4
+fit_3_2 <- aov(avg_delay_arr ~ service, data = dati_3_2)
+summary(fit_3_2)
+
+T0_3_2 <- summary(fit_3_2)[[1]][1,4]  # extract the test statistic
+T0_3_2
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_3_2 <- numeric(B) 
+n <- dim(dati_3_2)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  avg_delay_arr_perm <- dati_3_2$avg_delay_arr[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(avg_delay_arr_perm ~ dati_3_2$service) 
+  
+  # Test statistic:
+  T_stat_3_2[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_3_2,xlim=range(c(T_stat_3_2,T0_3_2)),breaks=30, main='Permutational distribution of statistic in the ANOVA_3_2')
+abline(v=T0_3_2,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_3_2),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_3_2')
+abline(v=T0_3_2,col=3,lwd=4)
+
+# p-value
+p_val_3_2 <- sum(T_stat_3_2>=T0_3_2)/B
+p_val_3_2
+#pvalue circa 0: c'è una differenza tra i ritardi, in distribuzione, a seconda che siano 
+#tratte nazionali o internazionali
+
+#Quindi ricapitolando:
+#prendendo come unità una tratta specifica in un mese specifico tra il 2015 e il 2018:
+#     -la proporzione di treni cancellati non differisce per il tipo di tratta
+#     -la proporzione di treni in ritardo alla partenza è maggiore nei viaggi internazionali che in quelli nazionali
+#     -il ritardo medio alla partenza è lo stesso, mentre non lo è all'arrivo: la coda dei nazionali è molto più
+#       pesante, con alcuni ritardi che sono incrementati tantissimo
+
+
+#PUNTO 4
+#Ora provo a valutare una risposta non scalare, ovvero le cause dei ritardi (non differenzio tra andata e ritorno)
+dati_4 = data.frame(external_causes= data$delay_cause_external_cause, rail_infrastructure=data$delay_cause_rail_infrastructure,
+                   traffic_management=data$delay_cause_traffic_management, rolling_stock = data$delay_cause_rolling_stock,
+                   station_management=data$delay_cause_station_management, travelers=data$delay_cause_travelers, service = servizio, row.names = tratte)
+nazionali_4 = dati_4[which(dati_4$service==livelli_servizio[2]),1]
+internazionali_4 = dati_4[which(dati_4$service==livelli_servizio[1]),1]
+
+
+finestra_grafica(t)
+par(mfrow=c(3,2))
+boxplot(external_causes ~ service, data = dati_4, main="Delay due to external causes", xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+boxplot(rail_infrastructure ~ service, data = dati_4, main='Delay due to rail infrastructure', xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+boxplot(traffic_management ~ service, data = dati_4, main='Delay due to traffic management',  xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+boxplot(rolling_stock ~ service, data = dati_4, main='Delay due to rolling stock', xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+boxplot(station_management ~ service, data = dati_4, main='Delay due to station management', xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+boxplot(travelers ~ service, data = dati_4, main='Delay due to travelers', xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+
+#I see differences in almost every response
+#external causes is not so indicative, since it does not indicate anything about what happened
+#rail infrastructure: affects more the national routes
+#traffic management: affects more the international routes
+#rolling stock: it appears to have some sort of equal distribution
+#station management: it is some sort of similar
+#station management: it makes sense that affects more national routes since you have usually more stops
+#travelers: also, here, I suppose it is a sort of I have to wait for some passengers that are late.
+#           So, it makes sense since in tha national routes you have more stops.
+
+#The idea is: I perform firstly a MANOVA to see if the 6-dim distribution varies depending on the type of service
+
+fit <- manova(as.matrix(dati_4[,1:6]) ~ dati_4$service)
+summary.manova(fit,test="Wilks") 
+T0_4 <- -summary.manova(fit,test="Wilks")$stats[1,2]
+T0_4
+T_stat_4 <- numeric(B)
+n=dim(dati_4)[1]
+
+for(perm in 1:B){
+  # choose random permutation
+  permutation <- sample(1:n)
+  service.perm <- dati_4$service[permutation]
+  fit.perm <- manova(as.matrix(dati_4[,1:6]) ~ service.perm)
+  T_stat_4[perm] <- -summary.manova(fit.perm,test="Wilks")$stats[1,2]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_4,xlim=range(c(T_stat_4,T0_4)),breaks=30, main='Permutational distribution of statistic in the MANOVA_4_1')
+abline(v=T0_4,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_4),xlim=c(-1,20), main='ECDF of the statistic in the MANOVA_4_1')
+abline(v=T0_4,col=3,lwd=4)
+
+# p-value
+p_val_4 <- sum(T_stat_4>=T0_4)/B
+p_val_4
+#Il pvalue è praticamente nullo: rifiuto: provo a fare 6 ANOVA separatamente per vedere se per 
+#quali tratte risentano maggiormente di alcune cose
+
+#EXTERNAL CAUSES: risulta essere la più difficile da interpretare
+B=1e4
+fit_4_external <- aov(dati_4$external_causes ~ dati_4$service)
+summary(fit_4_external)
+
+T0_4_external <- summary(fit_4_external)[[1]][1,4]  # extract the test statistic
+T0_4_external
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_4_external <- numeric(B) 
+n <- dim(dati_4)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  prop_perm <- dati_4$external_causes[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(prop_perm ~ dati_4$service) 
+  
+  # Test statistic:
+  T_stat_4_external[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_4_external,xlim=range(c(T_stat_4_external,T0_4_external)),breaks=30, main='Permutational distribution of statistic in the ANOVA_4_external')
+abline(v=T0_4_external,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_4_external),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_4_external')
+abline(v=T0_4_external,col=3,lwd=4)
+
+# p-value
+p_val_4_external <- sum(T_stat_4_external>=T0_4_external)/B
+p_val_4_external
+#pvalue nullo: vi è una differenza
+
+finestra_grafica(t)
+b4_external=boxplot(external_causes ~ service, data = dati_4, main="Delay due to external causes", xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+b4_external$stats
+#i viaggi nazionali sono maggiormente soggetti a cause di ritardo esterne, quindi a veri e propri imprevisti
+
+i_imprevisto = which(dati_4$external_causes==1) #sono le tratte in cui devo imputare tutte le cause del ritardo a cause esterne
+i_imprevisto 
+length(i_imprevisto)
+data[i_imprevisto,c(3,7,8,10,11,14,15)] #prendo tipo di servizio, viaggi totali, numero di cancellati,
+#in ritardo alla partenza, di quanto, in ritardo all'arrivo, di quanto
+#queste sono le tratte in cui i ritardi sono stati dovuti tutti essere imputati a cause esterne:
+row.names(dati_4[i_imprevisto,])
+prop_ritardi_partenza=data[i_imprevisto,10]/data[i_imprevisto,7]
+prop_ritardi_partenza
+prop_ritardi_arrivo=data[i_imprevisto,14]/data[i_imprevisto,7]
+prop_ritardi_arrivo
+#la tratta BELLEGARDE (AIN) - PARIS LYON / 2018 7 ha un'altissima percentuale di ritardi (quasi il 50% sia a partire che ad arrivare nel luglio 2018) 
+data[which(data$route=="BELLEGARDE (AIN) - PARIS LYON" & data$year=='2018' & data$month==7) ,c(7,10,11,14,15)]
+#ci sono state 220 corse, e quasi metà di queste si sono rivelate essere ritardi, con un ritardo medio di
+#partenza intorno ai 7 minuti, mentre di arrivo più di 30
+#su internet non ho trovato nulla a riguardo di eclatante
+
+#Prossime cose:
+#continuare queste ANOVA
+#fare degli intervalli di confidenza con il bootstrap per le probabilità di una determinata
+#causa per il ritardo (pensarci bene)
