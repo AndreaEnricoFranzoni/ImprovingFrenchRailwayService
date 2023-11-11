@@ -74,11 +74,44 @@ out_shape$ID_outliers
 
 
 # Multivariate depth ------------------------------------------------------
-
 # delay on arrival (all o solo in ritardo) e cancelled trains
 # valutare eventi estremi (>30/60)
+df=cbind(data$num_of_canceled_trains, data$avg_delay_late_on_arrival)
+df=na.omit(df)
+# bin = hexbin(df[,1],df[,2], xbins=10, xlab="exp 1", ylab="exp 2")
+# x11()
+# plot(bin, main="Hexagonal Binning")  
 
+meth = 'Tukey'   #'Mahalanobis'
+method_depth = depth(u=df, method=meth)
+point = c(0,0)
+point_depth = depth(u = point, X = df, method = meth) # useful later on 
+median = depthMedian(df, depth_params = list(method=meth))
+#df_bivariate_exp[which.max(method_depth),]
+# In case of bivariate dataset, we can plot the contour lines
+x11()
+depthContour(df, depth_params = list(method=meth))
 
+# Increasing number of dimensions leads to more computational expensive depths -> heuristic methods to approximate it
+
+x11()
+bagplot(df, factor = 3, show.whiskers = T)
+# The bag is composed of the deepest 50% of the data (i.e. $C_{.5}$)
+# The fence separates the outliers from the other observations
+# The loop contains data between the bag and the fence
+# Naturally, the median (i.e. the deepest datum) is inside the bag.
+# Customize them: 
+aplpack::bagplot(df,show.whiskers = F,main="Bagplot")
+aplpack::bagplot(df,show.loophull = F,main="Sunburst plot")
+
+# Extraction of outliers - eventual removal
+bagplot = bagplot(df)
+outlying_obs = bagplot$pxy.outlier
+
+ind_outlying_obs = which(apply(df,1,function(x) all(x %in% outlying_obs)))
+data$route[ind_outlying_obs]
+
+#df_clean = df[-ind_outlying_obs,]
 
 
 #### TRATTA A-B vs TRATTA B-A ####
