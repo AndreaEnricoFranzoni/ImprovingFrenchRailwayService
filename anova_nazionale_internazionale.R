@@ -621,6 +621,7 @@ legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
 
 #The idea is: I perform firstly a MANOVA to see if the 6-dim distribution varies depending on the type of service
 
+B=1e4
 fit <- manova(as.matrix(dati_4[,1:6]) ~ dati_4$service)
 summary.manova(fit,test="Wilks") 
 T0_4 <- -summary.manova(fit,test="Wilks")$stats[1,2]
@@ -709,7 +710,140 @@ data[which(data$route=="BELLEGARDE (AIN) - PARIS LYON" & data$year=='2018' & dat
 #partenza intorno ai 7 minuti, mentre di arrivo più di 30
 #su internet non ho trovato nulla a riguardo di eclatante
 
-#Prossime cose:
-#continuare queste ANOVA
-#fare degli intervalli di confidenza con il bootstrap per le probabilità di una determinata
-#causa per il ritardo (pensarci bene)
+
+#RAIL INFRASTRUCTURE: 
+B=1e4
+fit_4_rail_infrastructure <- aov(dati_4$rail_infrastructure ~ dati_4$service)
+summary(fit_4_rail_infrastructure)
+
+T0_4_rail_infrastructure <- summary(fit_4_rail_infrastructure)[[1]][1,4]  # extract the test statistic
+T0_4_rail_infrastructure
+#To compute the permutational distribution, I assign at random the treatments (that, under H0, should all be equal, and equal to 0)
+T_stat_4_rail_infrastructure <- numeric(B) 
+n <- dim(dati_4)[1]
+
+for(perm in 1:B){
+  # Permutation:
+  permutation <- sample(1:n)
+  prop_perm <- dati_4$rail_infrastructure[permutation]    #sto cambiando esclusivamente la parte categorica dei dati
+  fit_perm <- aov(prop_perm ~ dati_4$service) 
+  
+  # Test statistic:
+  T_stat_4_rail_infrastructure[perm] <- summary(fit_perm)[[1]][1,4]
+}
+
+#plot of the permutational distribution
+finestra_grafica(t)
+hist(T_stat_4_rail_infrastructure,xlim=range(c(T_stat_4_rail_infrastructure,T0_4_rail_infrastructure)),breaks=30, main='Permutational distribution of statistic in the ANOVA_4_rail_infrastructure')
+abline(v=T0_4_rail_infrastructure,col=3,lwd=2)
+
+finestra_grafica(t)
+plot(ecdf(T_stat_4_rail_infrastructure),xlim=c(-1,20), main='ECDF of the statistic in the ANOVA_4_rail_infrastructure')
+abline(v=T0_4_rail_infrastructure,col=3,lwd=4)
+
+# p-value
+p_val_4_rail_infrastructure <- sum(T_stat_4_rail_infrastructure>=T0_4_rail_infrastructure)/B
+p_val_4_rail_infrastructure
+#anche in questo caso il pvalue è 0
+
+finestra_grafica(t)
+b4_rail_infrastructure=boxplot(rail_infrastructure ~ service, data = dati_4, main="Delay due to rail infrastructure", xlab='Route', ylab="Proportion", col=c('blue','red'))
+legend('top', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+#dal boxplot si nota come la percentuale di ritardi dovuti alle rail infrastructure nei viaggi nazionali sia 
+#stocasticamente greater di quella negli internazionali (la coda è anche più pesante)
+b4_rail_infrastructure$stats
+length((which(b4_rail_infrastructure$group==1))) 
+length((which(b4_rail_infrastructure$group==2)))
+#il baffo superiore si assesta circa a 0.6 per entrmabe le distribuzioni però
+#analizzo le tratte in cui in un determinato mese e in un determinato anno questa percentuale sia stata più grande di 0.6
+#in proporzione è 
+# 11/608 = 0.01809211
+# 91/4854 = 0.01874742
+# la proporzione è sempre la stessa sul numero di tratte, identificando la tratta come un partenza-arrivo in un determinato mese e in un determinato anno
+# però potrebbe essere utile valutare in queste tratte specifiche
+# 1) quanto ritardo medio viene causato
+# 2) valutare quanto la tratta sia trafficata effettivamente
+
+treshold_nazionali=b4_rail_infrastructure$stats[10]
+treshold_internazionali=b4_rail_infrastructure$stats[5]
+
+out_ri_nazionali = data[which(data$delay_cause_rail_infrastructure>=treshold_nazionali & data$service==livelli_servizio[2]),]
+out_ri_internazionali = data[which(data$delay_cause_rail_infrastructure>=treshold_internazionali & data$service==livelli_servizio[1]),]
+
+colMeans(cbind(out_ri_nazionali$avg_delay_late_at_departure, out_ri_nazionali$avg_delay_late_on_arrival))
+colMeans(cbind(out_ri_internazionali$avg_delay_late_at_departure, out_ri_internazionali$avg_delay_late_on_arrival))
+
+#nelle tratte "outlier", il disagio medio causato sembra essere differente a seconda che la tratta sia nazionale o internazionale
+#soprattutto per quanto concerne l'arrivo: l'accumulo del ritardo sembra ingrandirsi maggiormente in quelle tratte
+# in cui le rail infrastructure non funzionano molto bene
+
+#adesso sarebbe il caso di valutare più nel dettaglio queste tratte specifiche
+#lo faccio anno per anno
+
+#2015
+anno = 2015
+
+viaggi_totali_nazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[2]),7])
+viaggi_totali_nazionali_outliers = sum(data[which(out_ri_nazionali$year==anno & out_ri_nazionali$service==livelli_servizio[2]),7])
+prop_naz_2015=viaggi_totali_nazionali_outliers/viaggi_totali_nazionali 
+
+viaggi_totali_internazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[1]),7])
+viaggi_totali_internazionali_outliers = sum(data[which(out_ri_internazionali$year==anno & out_ri_internazionali$service==livelli_servizio[1]),7])
+prop_inter_2015=viaggi_totali_internazionali_outliers/viaggi_totali_internazionali
+#2015: la proporzione di viaggi che risentiva di uno scarso livello delle infrastrutture ferroviarie (scarso livello=grande ritardo dovuto ad esse) è
+#     -nazionali: 0.02852151
+#     -internazionali: 0.03876679
+
+#2016
+anno = 2016
+
+viaggi_totali_nazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[2]),7])
+viaggi_totali_nazionali_outliers = sum(data[which(out_ri_nazionali$year==anno & out_ri_nazionali$service==livelli_servizio[2]),7])
+prop_naz_2016=viaggi_totali_nazionali_outliers/viaggi_totali_nazionali 
+
+viaggi_totali_internazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[1]),7])
+viaggi_totali_internazionali_outliers = sum(data[which(out_ri_internazionali$year==anno & out_ri_internazionali$service==livelli_servizio[1]),7])
+prop_inter_2016=viaggi_totali_internazionali_outliers/viaggi_totali_internazionali
+#2016: la proporzione di viaggi che risentiva di uno scarso livello delle infrastrutture ferroviarie (scarso livello=grande ritardo dovuto ad esse) è
+#     -nazionali: 0.01535733
+#     -internazionali: 0.06589384
+
+#2017
+anno = 2017
+
+viaggi_totali_nazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[2]),7])
+viaggi_totali_nazionali_outliers = sum(data[which(out_ri_nazionali$year==anno & out_ri_nazionali$service==livelli_servizio[2]),7])
+prop_naz_2017=viaggi_totali_nazionali_outliers/viaggi_totali_nazionali 
+
+viaggi_totali_internazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[1]),7])
+viaggi_totali_internazionali_outliers = sum(data[which(out_ri_internazionali$year==anno & out_ri_internazionali$service==livelli_servizio[1]),7])
+prop_inter_2017=viaggi_totali_internazionali_outliers/viaggi_totali_internazionali
+#2017: la proporzione di viaggi che risentiva di uno scarso livello delle infrastrutture ferroviarie (scarso livello=grande ritardo dovuto ad esse) è
+#     -nazionali: 0.02227834
+#     -internazionali: 0.06991716
+
+#2018
+anno = 2018
+
+viaggi_totali_nazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[2]),7])
+viaggi_totali_nazionali_outliers = sum(data[which(out_ri_nazionali$year==anno & out_ri_nazionali$service==livelli_servizio[2]),7])
+prop_naz_2018=viaggi_totali_nazionali_outliers/viaggi_totali_nazionali 
+
+viaggi_totali_internazionali = sum(data[which(data$year==anno & data$service==livelli_servizio[1]),7])
+viaggi_totali_internazionali_outliers = sum(data[which(out_ri_internazionali$year==anno & out_ri_internazionali$service==livelli_servizio[1]),7])
+prop_inter_2018=viaggi_totali_internazionali_outliers/viaggi_totali_internazionali
+#2018: la proporzione di viaggi che risentiva di uno scarso livello delle infrastrutture ferroviarie (scarso livello=grande ritardo dovuto ad esse) è
+#     -nazionali: 0.008825188
+#     -internazionali: 0.01586637
+
+dati_ri = data.frame(row.names =  c(2015,2016,2017,2018), c(prop_naz_2015,prop_naz_2016,prop_naz_2017,prop_naz_2018), c(prop_inter_2015,prop_inter_2016,prop_inter_2017,prop_inter_2018))
+dati_viaggi = data.frame(row.names =  c(2015,2016,2017,2018), 
+                         c(sum(data[which(data$year==2015 & data$service==livelli_servizio[2]),7]),sum(data[which(data$year==2016 & data$service==livelli_servizio[2]),7]),sum(data[which(data$year==2017 & data$service==livelli_servizio[2]),7]),sum(data[which(data$year==2018 & data$service==livelli_servizio[2]),7])),
+                         c(sum(data[which(data$year==2015 & data$service==livelli_servizio[1]),7]),sum(data[which(data$year==2016 & data$service==livelli_servizio[1]),7]),sum(data[which(data$year==2017 & data$service==livelli_servizio[1]),7]),sum(data[which(data$year==2018 & data$service==livelli_servizio[1]),7])))
+finestra_grafica(t)
+par(mfrow=c(3,1))
+matplot((dati_ri),type='l',main="Proportion of route that were affected by the bad rail infrastructure in a big way", xlab='Year', ylab="Proportion", col=c('blue','red'))
+legend('topright', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
+matplot((dati_viaggi[,1]),type='l')
+matplot((dati_viaggi[,2]),type='l')
+
