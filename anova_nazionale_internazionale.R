@@ -847,3 +847,6 @@ legend('topright', legend=livelli_servizio, fill=c('blue','red'), cex=.7)
 matplot((dati_viaggi[,1]),type='l')
 matplot((dati_viaggi[,2]),type='l')
 
+###L'ANALISI DELLE CAUSE PRESE SINGOLARMENTE DOVREBBE ESSERE CONTINUATA DA QUI IN AVANTI:
+#MI FERMO UN ATTIMO PER FARE DEGLI IC: NUOVO FILE####
+
