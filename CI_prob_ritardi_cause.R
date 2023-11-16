@@ -50,7 +50,7 @@ treni_internaz_2018 = data[which(data$year==livelli_anno[4] & data$service==live
 #fino a qui va fatto runnare, poi ogni punto può essere fatto runnare a parte
 
 B <- 1e3      #numero di ripetzioni del bootstrap
-ALPHA=0.05.   #intervalli di confidenza bootstrap t al 95%
+ALPHA=0.05   #intervalli di confidenza bootstrap t al 95%
 
 
 ####
@@ -389,3 +389,28 @@ segments(4,CI_RAIL_INFRASTRUCTURE_INTERNAZ[1,4], 4, CI_RAIL_INFRASTRUCTURE_INTER
 #E' GIUSTO FARLO COSI' o BISOGNA APPLICARE delle correzioni dovute agli anni?
 # e se vi aggiungo delle altre covariate tipo altri tipi di cause di ritardo? Devo applicare
 # una correzione?
+
+x.bivar <- data.m1[, c(1,2)]
+y.bivar <- data.m1[, c(4,5)]
+
+depths.x <- DepthProc::depth(u=x.bivar, method="Tukey")
+depths.y <- DepthProc::depth(u=y.bivar, method="Tukey")
+cbind(depths.x, depths.y)
+
+T0 <- cor(depths.x, depths.y)**2  #Pearson correlation coefficient on the depths
+T0 #and then I iterate the process permuting it
+
+Tvec <- NULL
+set.seed(SEED)
+for (k in 1:B){
+  depths.x.perm <- sample(depths.x, replace=F)
+  depths.y.perm <- sample(depths.y, replace=F)
+  
+  r.sq.perm <- cor(depths.x.perm, depths.y.perm)**2
+  
+  Tvec <- c(Tvec, r.sq.perm)
+}
+
+hist(Tvec)
+abline(v=T0, col="pink")
+sum(Tvec>=T0)/B < ALPHA
