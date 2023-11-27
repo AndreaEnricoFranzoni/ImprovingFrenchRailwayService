@@ -413,4 +413,4 @@ for (k in 1:B){
 
 hist(Tvec)
 abline(v=T0, col="pink")
-sum(Tvec>=T0)/B < ALPHA
+sum(Tvec>=T0)/B < ALPHA   
