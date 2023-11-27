@@ -1,6 +1,6 @@
 library(readxl)
 data=read_excel('trains_update_2610.xlsx')
-N=dim(data)[1]
+n=dim(data)[1]
 set.seed(1)
 
 finestra_grafica=function(t){
@@ -42,9 +42,17 @@ dati = data_frame(prop_ritardi_partenza=(data$num_late_at_departure/data$total_n
                   traffic_management=(data$delay_cause_traffic_management),
                   rolling_stock=(data$delay_cause_rolling_stock),
                   station_management=(data$delay_cause_station_management),
-                  cause_travelers=(data$delay_cause_travelers),
+                  cause_travelers=(data$delay_cause_travelers)
                   ) #la mia variabile risposta è la probabilità di partire in ritardo
-dati=dati[which(data$service==livelli_servizio[2]),]
+dati = data_frame(prop_ritardi_partenza=logit(data$num_late_at_departure/data$total_num_trips),
+                  prop_ritard_arrivo=logit(data$num_arriving_late/data$total_num_trips),
+                  external_causes=logit(data$delay_cause_external_cause),
+                  rail_infrastructure=logit(data$delay_cause_rail_infrastructure),
+                  traffic_management=logit(data$delay_cause_traffic_management),
+                  rolling_stock=logit(data$delay_cause_rolling_stock),
+                  station_management=logit(data$delay_cause_station_management),
+                  cause_travelers=logit(data$delay_cause_travelers))
+dati=dati[which(data$service==livelli_servizio[2] & data$year=='2015'),]
 dati=na.omit(dati)
 
 finestra_grafica(t)
@@ -75,3 +83,55 @@ matlines(dati$external_causes, se.bands ,lwd =1, col =" blue",lty =3)
 #proporzioni, però non mi sembrano risultati soddisfacenti: è sufficiente trovare un buon modello
 #per collegare la prop della risposta con le probabilità delle varie cause di ritardo, e poi si usa il gam
 #però verosimilmente bisognerà passare al'utilizzo di dati funzionali
+#tutta questa parte fino a qui è da buttare via
+
+
+#FUNCTIONAL DATA
+graphics.off()
+p=dim(data)[2]
+p
+years = unique(data$year)
+months = unique(data$month)
+num_tratte = length(unique(data$route))
+cols = (length(unique(data$year)))*(length(unique(data$month)))
+
+
+
+response=data$num_late_at_departure/data$total_num_trips #ora come ora considero la proporzione di ritardi
+external_cause=data$delay_cause_external_cause
+rail_infrastructure_cause=data$delay_cause_rail_infrastructure
+traffic_management_cause=data$delay_cause_traffic_management
+rolling_stock_cause=data$delay_cause_rolling_stock
+station_management_cause=data$delay_cause_station_management
+travelers_cause=data$delay_cause_travelers
+dati_nuovi = matrix(nrow=num_tratte, ncol = cols)
+
+# Functional depth --------------------------------------------------------
+r = (unique(data$route))
+for (k in 1:num_tratte) {
+  for (j in years) {
+    for ( i in months){
+      if(length(response[which(data$route==r[k] & data$year==j & data$month==i)])!=0)
+        dati_nuovi[k,(j-2015)*12 + (i)]=response[which(data$route==r[k] & data$year==j & data$month==i)]
+    }
+  }
+  dati_nuovi[k,48]=r[k]
+}
+
+dati_nuovi = data.frame(dati_nuovi)
+dati_nuovi = na.omit(dati_nuovi)
+
+fun = t(as.matrix(dati_nuovi[1:47]))
+fun = as.data.frame(fun)
+fun = as.data.frame(sapply(fun, as.numeric))
+time = 1:47
+
+f_data = fData(time, t(fun))
+
+band_depth = BD(Data = f_data)
+modified_band_depth = MBD(Data = f_data)
+median_curve = median_fData(fData = f_data, type = "MBD") # still an fData object
+
+finestra_grafica(t)
+plot(f_data) 
+lines(time,median_curve$values, lwd=2)
