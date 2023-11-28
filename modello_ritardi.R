@@ -135,3 +135,4 @@ median_curve = median_fData(fData = f_data, type = "MBD") # still an fData objec
 finestra_grafica(t)
 plot(f_data) 
 lines(time,median_curve$values, lwd=2)
+ 
