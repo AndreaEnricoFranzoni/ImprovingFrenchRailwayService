@@ -12,15 +12,21 @@ p
 # L'idea sarebbe: 
 # - dal dataset con tutto seleziono le stazioni da cui partono più di 2-3 tratte
 # - vedo i ritardi dei treni per ognuna di queste departure stations
-# - seleziono le departure stations con ritardi più alti (facendo un ANOVA ?)
+# - seleziono le departure stations con ritardi più alti (facendo un ANOVA ? con le depth?)
 # - faccio la successiva analisi su queste stazioni
 
+# unique(data$route)
+# 
+# stations = data$departure_station[which(data)]
+# data_departures = data[which()]
+
+
 x11()
-boxplot(data$avg_delay_late_at_departure ~ data$departure_station)
+boxplot(data$avg_delay_late_at_departure ~ data$departure_station, ylim= c(0,50))
 
 # I isolate data of trains departing from a station
-station = 'LYON PART DIEU' # ANOVA returns a very low p-value
-#station = 'PARIS EST' #ANOVA returns a very high p-value
+#station = 'LYON PART DIEU' # ANOVA returns a very low p-value
+station = 'PARIS LYON' #ANOVA returns a very high p-value
 data_station = data[which(data$departure_station==station),]
 unique(data_station$route)
 data_station$route= factor(data_station$route)
@@ -30,14 +36,15 @@ data_station$arrival_station = factor(data_station$arrival_station)
 # plot of the average delay of each route 
 boxplot(data_station$avg_delay_late_at_departure ~ data_station$arrival_station, 
         main=paste('STATION', station), xlab = 'arrival station', ylab='average delay at departure' )
+# Problema: stai pesando le tratte con meno treni in maniera uguale a tratte con più treni
 
 # plot of the number of trains that have a late departure for each route
 boxplot(data_station$num_late_at_departure~ data_station$arrival_station, 
         main=paste('STATION', station), xlab='arrival station', ylab = 'number of late trains at departure' )
 # standardised with respect to the total number of trips
 boxplot(data_station$num_late_at_departure/data_station$total_num_trips~ data_station$arrival_station, 
-        main=paste('STATION', station), xlab = 'arrival station', ylab='ration of late trains at departure' )
-
+        main=paste('STATION', station), xlab = 'arrival station', ylab='ratio of late trains at departure' )
+levels(unique(data_station$arrival_station))
 
 #### PARAMETRIC ANOVA ####
 nlevels = length(levels(data_station$arrival_station))
@@ -101,6 +108,6 @@ p_val
 
 #### CONFIDENCE INTERVALS ####
 # Now I would like to build CIs for the mean delay at departure for each route, to see
-# which routes are the most
+# which routes are the most problematic
 
 
