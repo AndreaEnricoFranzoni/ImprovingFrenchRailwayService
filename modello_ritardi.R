@@ -2,6 +2,7 @@ library(readxl)
 data=read_excel('trains_update_2610.xlsx')
 N=dim(data)[1]
 set.seed(1)
+B=1000
 
 finestra_grafica=function(t){
   if(t==0) quartz()
@@ -109,19 +110,6 @@ travelers_cause=data.frame(data$delay_cause_travelers)
 #Trasformo in funzionale, in funzione del tempo, ogni unità è una specifica tratta
 r = (unique(data$route))
 time = 1:47
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ##############
 response_fd = matrix(nrow=num_tratte, ncol = cols)
@@ -290,7 +278,8 @@ for (i in 1:length(tratte_comuni)) {
   
 }
 
-#ora trasformo i dati in funzionali: per ognuno separatamente
+#ora trasformo i dati in funzionali: per ognuno separatamente: questi sono i dataframe 
+#che poi verranno trasformati in functinal
 response_fd_cut = data.frame(response_fd_[indici_response,1:47], row.names = tratte_comuni)
 external_causes_fd_cut = data.frame(external_causes_fd_[indici_external_causes,1:47], row.names = tratte_comuni)
 rail_infrastructure_causes_fd_cut = data.frame(rail_infrastructure_causes_fd_[indici_rail_infrastructure_causes,1:47], row.names = tratte_comuni)
@@ -300,18 +289,213 @@ station_management_cause_fd_cut = data.frame(station_management_cause_fd_[indici
 travelers_cause_fd_cut = data.frame(travelers_cause_fd_[indici_traveler_causes,1:47], row.names = tratte_comuni)
 
 
+###EXPLORATIVE ANALYSIS
+#trasformazione functional per le mediane e i plot
+f_data_response = fData(time,response_fd_cut)
+f_data_external_causes = fData(time,external_causes_fd_cut)
+f_data_rail_infrastructure_causes = fData(time,rail_infrastructure_causes_fd_cut)
+f_data_rolling_stock_causes = fData(time,rolling_stock_cause_fd_cut)
+f_data_traffic_management_cause = fData(time,traffic_management_cause_fd_cut)
+f_data_station_management_cause = fData(time,station_management_cause_fd_cut)
+f_data_travelers_cause = fData(time,travelers_cause_fd_cut)
 
-### questo è necessario per trasformare tutti i dati
+#mediane
+band_depth_response = BD(Data = f_data_response)
+modified_band_depth_response = MBD(Data = f_data_response)
+median_curve_response = median_fData(fData = f_data_response, type = "MBD") 
+
+band_depth_external_causes = BD(Data = f_data_external_causes)
+modified_band_depth_external_causes = MBD(Data = f_data_external_causes)
+median_curve_external_causes = median_fData(fData = f_data_external_causes, type = "MBD") 
+
+band_depth_rail_infrastructure_cause = BD(Data = f_data_rail_infrastructure_causes)
+modified_band_depth_rail_infrastructure_cause = MBD(Data = f_data_rail_infrastructure_causes)
+median_curve_rail_infrastructure_cause = median_fData(fData = f_data_rail_infrastructure_causes, type = "MBD") 
+
+band_depth_rolling_stock_cause = BD(Data = f_data_rolling_stock_causes)
+modified_band_depth_rolling_stock_cause = MBD(Data = f_data_rolling_stock_causes)
+median_curve_rolling_stock_cause = median_fData(fData = f_data_rolling_stock_causes, type = "MBD")
+
+band_depth_traffic_management_cause = BD(Data = f_data_traffic_management_cause)
+modified_band_depth_traffic_management_cause = MBD(Data = f_data_traffic_management_cause)
+median_curve_traffic_management_cause = median_fData(fData = f_data_traffic_management_cause, type = "MBD")
+
+band_depth_station_management_cause = BD(Data = f_data_station_management_cause)
+modified_band_depth_station_management_cause = MBD(Data = f_data_station_management_cause)
+median_curve_station_management_cause = median_fData(fData = f_data_station_management_cause, type = "MBD") 
+
+band_depth_travelers_cause = BD(Data = f_data_travelers_cause)
+modified_band_depth_travelers_cause = MBD(Data = f_data_travelers_cause)
+median_curve_travelers_cause = median_fData(fData = f_data_travelers_cause, type = "MBD") 
+
+#plot of the response
+temp=f_data_response$values
+finestra_grafica(t)
+plot(f_data_response, main="Average delay at departure") 
+lines(time,median_curve_response$values, lwd=2)
+
+#plot of the covariates
+finestra_grafica(t)
+par(mfrow=c(3,2))
+plot(f_data_external_causes, main="External causes") 
+lines(time,median_curve_external_causes$values, lwd=2)
+plot(f_data_rail_infrastructure_causes, main="Rail infrastructure causes") 
+lines(time,median_curve_rail_infrastructure_cause$values, lwd=2)
+plot(f_data_rolling_stock_causes, main="Rolling stock causes") 
+lines(time,median_curve_rolling_stock_cause$values, lwd=2)
+plot(f_data_traffic_management_cause, main="Traffic management causes") 
+lines(time,median_curve_traffic_management_cause$values, lwd=2)
+plot(f_data_station_management_cause, main="Station management causes") 
+lines(time,median_curve_station_management_cause$values, lwd=2)
+plot(f_data_travelers_cause, main="Travelers causes") 
+lines(time,median_curve_travelers_cause$values, lwd=2)
+
+
+###OUTLIERS DETECTION: qui non plotta (ed è lo stesso identico codice dello script di nick)
+finestra_grafica(t)
+fbplot(f_data_response,adjust = T)
+outliergram(f_data_response,adjust = list(VERBOSE=FALSE))
+
+
+###INDEPENDENCE TEST FOR COVARIATES
+ranks.func.x1 <- roahd::MEI(Data = f_data_external_causes)
+ranks.func.x2 <- roahd::MEI(Data = f_data_rail_infrastructure_causes)
+ranks.func.x3 <- roahd::MEI(Data = f_data_rolling_stock_causes)
+ranks.func.x4 <- roahd::MEI(Data = f_data_traffic_management_cause)
+ranks.func.x5 <- roahd::MEI(Data = f_data_station_management_cause)
+ranks.func.x6 <- roahd::MEI(Data = f_data_travelers_cause)
+
+T0_12 <- cor(ranks.func.x1, ranks.func.x2)**2
+T0_13 <- cor(ranks.func.x1, ranks.func.x3)**2
+T0_14 <- cor(ranks.func.x1, ranks.func.x4)**2
+T0_15 <- cor(ranks.func.x1, ranks.func.x5)**2
+T0_16 <- cor(ranks.func.x1, ranks.func.x6)**2
+T0_23 <- cor(ranks.func.x2, ranks.func.x3)**2
+T0_24 <- cor(ranks.func.x2, ranks.func.x4)**2
+T0_25 <- cor(ranks.func.x2, ranks.func.x5)**2
+T0_26 <- cor(ranks.func.x2, ranks.func.x6)**2
+T0_34 <- cor(ranks.func.x3, ranks.func.x4)**2
+T0_35 <- cor(ranks.func.x3, ranks.func.x5)**2
+T0_36 <- cor(ranks.func.x3, ranks.func.x6)**2
+T0_45 <- cor(ranks.func.x4, ranks.func.x5)**2
+T0_46 <- cor(ranks.func.x4, ranks.func.x6)**2
+T0_56 <- cor(ranks.func.x5, ranks.func.x6)**2
+
+Tvec_12 <- NULL
+Tvec_13 <- NULL
+Tvec_14 <- NULL
+Tvec_15 <- NULL
+Tvec_16 <- NULL
+Tvec_23 <- NULL
+Tvec_24 <- NULL
+Tvec_25 <- NULL
+Tvec_26 <- NULL
+Tvec_34 <- NULL
+Tvec_35 <- NULL
+Tvec_36 <- NULL
+Tvec_45 <- NULL
+Tvec_46 <- NULL
+Tvec_56 <- NULL
+
+for (k in 1:B){
+  depths.func.x1.perm <- sample(ranks.func.x1, replace=F)
+  depths.func.x2.perm <- sample(ranks.func.x2, replace=F)
+  depths.func.x3.perm <- sample(ranks.func.x3, replace=F)
+  depths.func.x4.perm <- sample(ranks.func.x4, replace=F)
+  depths.func.x5.perm <- sample(ranks.func.x5, replace=F)
+  depths.func.x6.perm <- sample(ranks.func.x6, replace=F)
+  
+  r.sq.perm_12 <- cor(depths.func.x1.perm, depths.func.x2.perm)**2
+  r.sq.perm_13 <- cor(depths.func.x1.perm, depths.func.x3.perm)**2
+  r.sq.perm_14 <- cor(depths.func.x1.perm, depths.func.x4.perm)**2
+  r.sq.perm_15 <- cor(depths.func.x1.perm, depths.func.x5.perm)**2
+  r.sq.perm_16 <- cor(depths.func.x1.perm, depths.func.x6.perm)**2
+  r.sq.perm_23 <- cor(depths.func.x2.perm, depths.func.x3.perm)**2
+  r.sq.perm_24 <- cor(depths.func.x2.perm, depths.func.x4.perm)**2
+  r.sq.perm_25 <- cor(depths.func.x2.perm, depths.func.x5.perm)**2
+  r.sq.perm_26 <- cor(depths.func.x2.perm, depths.func.x6.perm)**2
+  r.sq.perm_34 <- cor(depths.func.x3.perm, depths.func.x4.perm)**2
+  r.sq.perm_35 <- cor(depths.func.x3.perm, depths.func.x5.perm)**2
+  r.sq.perm_36 <- cor(depths.func.x3.perm, depths.func.x6.perm)**2
+  r.sq.perm_45 <- cor(depths.func.x4.perm, depths.func.x5.perm)**2
+  r.sq.perm_46 <- cor(depths.func.x4.perm, depths.func.x6.perm)**2
+  r.sq.perm_56 <- cor(depths.func.x5.perm, depths.func.x6.perm)**2
+  
+  
+  
+  Tvec_12 <- c(Tvec_12, r.sq.perm_12)
+  Tvec_13 <- c(Tvec_12, r.sq.perm_13)
+  Tvec_14 <- c(Tvec_12, r.sq.perm_14)
+  Tvec_15 <- c(Tvec_12, r.sq.perm_15)
+  Tvec_16 <- c(Tvec_12, r.sq.perm_16)
+  Tvec_23 <- c(Tvec_12, r.sq.perm_23)
+  Tvec_24 <- c(Tvec_12, r.sq.perm_24)
+  Tvec_25 <- c(Tvec_12, r.sq.perm_25)
+  Tvec_26 <- c(Tvec_12, r.sq.perm_26)
+  Tvec_34 <- c(Tvec_12, r.sq.perm_34)
+  Tvec_35 <- c(Tvec_12, r.sq.perm_35)
+  Tvec_36 <- c(Tvec_12, r.sq.perm_36)
+  Tvec_45 <- c(Tvec_12, r.sq.perm_45)
+  Tvec_46 <- c(Tvec_12, r.sq.perm_46)
+  Tvec_56 <- c(Tvec_12, r.sq.perm_56)
+  
+  
+}
+
+pvalues_indipendenza_covariate=c(p_12=sum(Tvec_12>=T0_12)/B,
+                                 p_13=sum(Tvec_13>=T0_13)/B,
+                                 p_14=sum(Tvec_14>=T0_14)/B,
+                                 p_15=sum(Tvec_15>=T0_15)/B,
+                                 p_16=sum(Tvec_16>=T0_16)/B,
+                                 p_23=sum(Tvec_23>=T0_23)/B,
+                                 p_24=sum(Tvec_24>=T0_24)/B,
+                                 p_25=sum(Tvec_25>=T0_25)/B,
+                                 p_26=sum(Tvec_26>=T0_26)/B,
+                                 p_34=sum(Tvec_34>=T0_34)/B,
+                                 p_35=sum(Tvec_35>=T0_35)/B,
+                                 p_36=sum(Tvec_36>=T0_36)/B,
+                                 p_45=sum(Tvec_45>=T0_45)/B,
+                                 p_46=sum(Tvec_46>=T0_46)/B,
+                                 p_56=sum(Tvec_56>=T0_56)/B)
+
+finestra_grafica(t)
+plot(seq(1,15,1),pvalues_indipendenza_covariate,ylab='Pvalues',main='Pvalues independence tests between covariates')
+abline(h=0.05,col='red')
+
+ranks.func.x1 <- roahd::MEI(Data = f_data_external_causes)
+ranks.func.x2 <- roahd::MEI(Data = f_data_rail_infrastructure_causes)
+ranks.func.x3 <- roahd::MEI(Data = f_data_rolling_stock_causes)
+ranks.func.x4 <- roahd::MEI(Data = f_data_traffic_management_cause)
+ranks.func.x5 <- roahd::MEI(Data = f_data_station_management_cause)
+ranks.func.x6 <- roahd::MEI(Data = f_data_travelers_cause)
+#external causes/rail infrastructure:         independecy
+#external causes/rolling stock:               independency
+#external causes/traffic management:          dependency
+#external causes/station management:          dependency
+#external causes/travelers:                   dependency
+#rail infrastructure/rolling stock:           dependency
+#rail infrastructure/traffic management:      independency
+#rail infrastructure/station management:      dependency
+#rail infrastructure/travelers:               independency
+#rolling stock/traffic management:            dependency
+#rolling stock/station management:            dependency
+#rolling stock/travelers:                     dependency
+#traffic management/station management:       independency
+#traffic management/travelers:                depenency
+#station management/travelers:                dependency
+
+
+###REGRESSIONE
 nbasis=10
 m=3
 basis <- create.bspline.basis(rangeval=c(min(time),max(time)), nbasis=nbasis, norder=m)
 basismat <- eval.basis(time, basis)
 
-y=smooth.basis(argvals=time, as.numeric(response_fd_cut[1,]), fdParobj=basis)$fd 
-x1=smooth.basis(argvals=time, as.numeric(external_causes_fd_cut[1,]), fdParobj=basis)$fd 
+y = as.numeric(response_fd_cut[1,])
+x1 = smooth.basis(time,as.numeric(external_causes_fd_cut[1,]),basis)$fd
 
 library(fRegression)
-modello = fRegress( y,x1)
+modello = fRegress( y~x1)
 
 #così lo faccio
 est_coef_resp = lsfit(basismat, t(response_fd_cut[1,]), intercept=FALSE)$coef
@@ -359,63 +543,6 @@ x6=t(x6)
 
 
 
-#######
-f_data_response = fData(time,response_fd_cut)
-f_data_external_causes = fData(time,external_causes_fd_cut)
-f_data_rail_infrastructure_causes = fData(time,rail_infrastructure_causes_fd_cut)
-f_data_rolling_stock_causes = fData(time,rolling_stock_cause_fd_cut)
-f_data_traffic_management_cause = fData(time,traffic_management_cause_fd_cut)
-f_data_station_management_cause = fData(time,station_management_cause_fd_cut)
-f_data_travelers_cause = fData(time,travelers_cause_fd_cut)
-#####
-#mediane
-band_depth_response = BD(Data = f_data_response)
-modified_band_depth_response = MBD(Data = f_data_response)
-median_curve_response = median_fData(fData = f_data_response, type = "MBD") 
-
-band_depth_external_causes = BD(Data = f_data_external_causes)
-modified_band_depth_external_causes = MBD(Data = f_data_external_causes)
-median_curve_external_causes = median_fData(fData = f_data_external_causes, type = "MBD") 
-
-band_depth_rail_infrastructure_cause = BD(Data = f_data_rail_infrastructure_causes)
-modified_band_depth_rail_infrastructure_cause = MBD(Data = f_data_rail_infrastructure_causes)
-median_curve_rail_infrastructure_cause = median_fData(fData = f_data_rail_infrastructure_causes, type = "MBD") 
-
-band_depth_rolling_stock_cause = BD(Data = f_data_rolling_stock_causes)
-modified_band_depth_rolling_stock_cause = MBD(Data = f_data_rolling_stock_causes)
-median_curve_rolling_stock_cause = median_fData(fData = f_data_rolling_stock_causes, type = "MBD")
-
-band_depth_traffic_management_cause = BD(Data = f_data_traffic_management_cause)
-modified_band_depth_traffic_management_cause = MBD(Data = f_data_traffic_management_cause)
-median_curve_traffic_management_cause = median_fData(fData = f_data_traffic_management_cause, type = "MBD")
-
-band_depth_station_management_cause = BD(Data = f_data_station_management_cause)
-modified_band_depth_station_management_cause = MBD(Data = f_data_station_management_cause)
-median_curve_station_management_cause = median_fData(fData = f_data_station_management_cause, type = "MBD") 
-
-band_depth_travelers_cause = BD(Data = f_data_travelers_cause)
-modified_band_depth_travelers_cause = MBD(Data = f_data_travelers_cause)
-median_curve_travelers_cause = median_fData(fData = f_data_travelers_cause, type = "MBD") 
 
 
-#plot of the response
-finestra_grafica(t)
-plot(time,y[,1], main="Average delay at departure") 
-lines(time,median_curve_response$values, lwd=2)
- 
-#plot of the covariates
-finestra_grafica(t)
-par(mfrow=c(3,2))
-plot(x1, main="External causes") 
-lines(time,median_curve_external_causes$values, lwd=2)
-plot(f_data_rail_infrastructure_causes, main="Rail infrastructure causes") 
-lines(time,median_curve_rail_infrastructure_cause$values, lwd=2)
-plot(f_data_rolling_stock_causes, main="Rolling stock causes") 
-lines(time,median_curve_rolling_stock_cause$values, lwd=2)
-plot(f_data_traffic_management_cause, main="Traffic management causes") 
-lines(time,median_curve_traffic_management_cause$values, lwd=2)
-plot(f_data_station_management_cause, main="Station management causes") 
-lines(time,median_curve_station_management_cause$values, lwd=2)
-plot(f_data_travelers_cause, main="Travelers causes") 
-lines(time,median_curve_travelers_cause$values, lwd=2)
 
