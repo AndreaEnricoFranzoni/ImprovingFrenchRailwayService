@@ -2,6 +2,7 @@ library(readxl)
 library(stats)
 library(parallel)
 library(pbapply)
+library(CIPerm)
 data = read_excel('aggregated_trains.xlsx')
 
 n_cores = detectCores()
@@ -472,3 +473,49 @@ left.quantile = quantile(T_boot, alpha/2)
 CI.RP = c(T0 - (right.quantile - T0), T0,  T0 - (left.quantile - T0))
 names(CI.RP) = c('lower', 'center', 'upper')
 CI.RP
+
+#### CI with CIPerm package####
+stations = c('PARIS LYON', 'PARIS MONTPARNASSE')
+data_station=NULL
+for(i in 1:length(stations))
+  data_station = rbind(data_station, data[which(data$departure_station==stations[i]),])
+
+n_routes_from_stat = NULL
+for (i in 1:dim(data_station)[1]){
+  # numero routes che partono da stazione
+  station = data_station$departure_station[i]
+  num = length(data_station$departure_station[which(data_station$departure_station==station)])
+  n_routes_from_stat = c(n_routes_from_stat, num) 
+}
+n_routes_from_stat
+
+n_delays_from_stat = NULL
+for (i in 1:dim(data_station)[1]){
+  station = data_station$departure_station[i]
+  num = sum(data_station$num_late_at_departure[
+    which(data_station$departure_station==station)])
+  n_delays_from_stat = c(n_delays_from_stat, num)
+}
+response = NULL
+for (i in 1:dim(data_station)[1]){
+  response = c(response, data_station$avg_delay_late_at_departure[i]*
+                 data_station$num_late_at_departure[i]*n_routes_from_stat[i]/   
+                 n_delays_from_stat[i])
+}
+data_station$response = response                                                # since we have aggregated data, we need to readjust them
+
+n=dim(data_station)[1]
+group1 = data_station$response[which(data_station$departure_station==stations[1])]
+group2 = data_station$response[which(data_station$departure_station==stations[2])]
+
+data.cat = factor(data_station$departure_station)
+data.num = data_station$response
+x.name = 'Departure station'
+y.name = 'Average delay all departing'
+
+# same variance
+fligner.test(data.num, data.cat)
+
+dset=dset(group1, group2, nmc=1000)
+CI=cint(dset, conf.level = 0.95, tail = "Two")
+CI
