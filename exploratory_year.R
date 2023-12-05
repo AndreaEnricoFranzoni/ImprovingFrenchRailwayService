@@ -137,63 +137,165 @@ model_gam_red = gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr')
                       + s(avg_journey, by=year, bs ='cr')
                       + year)
 
-anova(model_gam_red, model_gam_inter, test = "F")
-# Da implementare in modo non parametrico dato che i residui non sono normali
+
+n1=length(model_gam_inter$residuals)
+res_tot=c(model_gam_red$residuals, model_gam_inter$residuals)
+SS1=sum(res_tot[1:n1]^2)
+SS2=sum(res_tot[(n1+1):(2*n1)]^2)
+df_1= n-sum(summary(model_gam_red)$s.table[,2])-4
+df_2 = n-sum(summary(model_gam_inter)$s.table[,2])-4
+df_difference = df_1-df_2
+anova(model_gam_red, model_gam_inter, test='F')
+T0=abs(((SS1-SS2)/df_difference)/(SS2/df_2))
+
+B=1000
+T_perm=numeric(B)
+for(perm in 1:B){
+  permutation=sample(2*n1)
+  res_perm=res_tot[permutation]
+  SS1=sum(res_perm[1:n1]^2)
+  SS2=sum(res_perm[(n1+1):(2*n1)]^2)
+  T_perm[perm] = abs(((SS1-SS2)/df_difference)/(SS2/df_2))
+}
+hist(T_perm)
+abline(v=T0)
+p.val = sum(T_perm>= T0)/B
 
 # Permutational test for intercept coefficients of the model 
 
 # Test for 2016
 i_H1 = c(i_2015, i_2016)
-var_H1 = NULL
+var_2016 = NULL
 for(i in 1:n){
   if(i %in% i_H1)
-    var_H1 = c(var_H1, 2015)
-  else var_H1 = c(var_H1, data$year[i])
+    var_2016 = c(var_2016, 2015)
+  else var_2016 = c(var_2016, data$year[i])
 }
-year_H1 = factor(var_H1)
+year_2016 = factor(var_2016)
 fit = gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr') 
           + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
           + year)
 T0 = abs(summary(fit)$p.t[2])
-res = gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr') 
-                + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
-                + year_H1)$residuals
-B= 100
+reduced_model= gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr') 
+                   + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
+                   + year_2016)
+res = reduced_model$residuals
+B= 10
 T_H1 = numeric(B)
-
 for(perm in 1:B){
-  permutation=sample(n)
+  permutation=sample(i_H1)
+  permutation=c(permutation, c(i_2017, i_2018))
   res_perm=res[permutation]
-  Y_perm= gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr') 
-              + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
-              + year_H1)$fitted.values + res_perm
+  Y_perm= reduced_model$fitted.values + res_perm
   T_H1[perm] = abs(summary(gam(Y_perm ~ s(avg_delay_dep, by=year, bs = 'cr') 
                        + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
-                       + year_H1))$p.t[1])
+                       + year_2016))$p.t[1])
 }
 p.val = sum(T_H1>= T0)/B
 
-# CI for beta_2016
+# CI for beta of the intercept
 fitted.obs = model_gam_inter$fitted.values
 res.obs = model_gam_inter$residuals
 
-b.obs=summary(model_gam_inter)$p.coeff[2]
-B=1000
-T.boot.b=numeric(B)
+b.obs_2016=summary(model_gam_inter)$p.coeff[2]
+b.obs_2017=summary(model_gam_inter)$p.coeff[3]
+b.obs_2018=summary(model_gam_inter)$p.coeff[4]
+B=100
+T.boot.b_2016=numeric(B)
+T.boot.b_2017=numeric(B)
+T.boot.b_2018=numeric(B)
 
 for(b in 1:B){
   delay_arr.boot = fitted.obs[i_2015] + sample(res.obs[i_2015], replace = T)
   delay_arr.boot = c(delay_arr.boot, fitted.obs[i_2016] + sample(res.obs[i_2016], replace = T))
   delay_arr.boot = c(delay_arr.boot, fitted.obs[i_2017] + sample(res.obs[i_2017], replace = T))
   delay_arr.boot = c(delay_arr.boot, fitted.obs[i_2018] + sample(res.obs[i_2018], replace = T))
-  T.boot.b[b] = summary(gam(delay_arr.boot ~ s(avg_delay_dep, by=year, bs = 'cr') 
-                            + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
-                            + year))$p.coeff[2]
+  boot.model=gam(delay_arr.boot ~ s(avg_delay_dep, by=year, bs = 'cr') 
+      + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
+      + year)
+  T.boot.b_2016[b] = summary(boot.model)$p.coeff[2]
+  T.boot.b_2017[b] = summary(boot.model)$p.coeff[3]
+  T.boot.b_2018[b] = summary(boot.model)$p.coeff[4]
+  
 }
 alpha=0.05
-right.quantile = quantile(T.boot.b, 1-alpha/2)
-left.quantile = quantile(T.boot.b, alpha/2)
-CI.RP.b = c(b.obs - (right.quantile - b.obs), b.obs - (left.quantile - b.obs))
+right.quantile_2016 = quantile(T.boot.b_2016, 1-alpha/2)
+left.quantile_2016 = quantile(T.boot.b_2016, alpha/2)
+CI.RP.b_2016 = c(b.obs_2016 - (right.quantile_2016 - b.obs_2016), b.obs_2016 - (left.quantile_2016 - b.obs_2016))
+CI.RP.b_2016
+right.quantile_2017 = quantile(T.boot.b_2017, 1-alpha/2)
+left.quantile_2017 = quantile(T.boot.b_2017, alpha/2)
+CI.RP.b_2017 = c(b.obs_2017 - (right.quantile_2017 - b.obs_2017), b.obs_2017 - (left.quantile_2017 - b.obs_2017))
+CI.RP.b_2017
+right.quantile_2018 = quantile(T.boot.b_2018, 1-alpha/2)
+left.quantile_2018 = quantile(T.boot.b_2018, alpha/2)
+CI.RP.b_2018 = c(b.obs_2018 - (right.quantile_2018 - b.obs_2018), b.obs_2018 - (left.quantile_2018 - b.obs_2018))
+CI.RP.b_2018
+
+
+# We remove the effect of 2016 from the intercept, getting a new model
+i_H1 = c(i_2015, i_2016)
+var_2016 = NULL
+for(i in 1:n){
+  if(i %in% i_H1)
+    var_2016 = c(var_2016, 2015)
+  else var_2016 = c(var_2016, data$year[i])
+}
+year_2016 = factor(var_2016)
+
+model_gam_no2016= gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr') 
+                   + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
+                   + year_2016)
+summary(model_gam_no2016)
+
+x11()
+plot(model_gam_no2016$residuals)
+
+x11()
+par(mfcol=c(2,2))
+plot(model_gam_no2016)
+
+# CI for beta of the intercept
+fitted.obs = model_gam_no2016$fitted.values
+res.obs = model_gam_no2016$residuals
+
+b.obs_2017=summary(model_gam_no2016)$p.coeff[2]
+b.obs_2018=summary(model_gam_no2016)$p.coeff[3]
+B=100
+T.boot.b_2017=numeric(B)
+T.boot.b_2018=numeric(B)
+
+for(b in 1:B){
+  delay_arr.boot = fitted.obs[i_H1] + sample(res.obs[i_H1], replace = T)
+  delay_arr.boot = c(delay_arr.boot, fitted.obs[i_2017] + sample(res.obs[i_2017], replace = T))
+  delay_arr.boot = c(delay_arr.boot, fitted.obs[i_2018] + sample(res.obs[i_2018], replace = T))
+  boot.model=gam(delay_arr.boot ~ s(avg_delay_dep, by=year, bs = 'cr') 
+                 + s(avg_journey, by=year, bs ='cr') + s(num_trips, bs='cr')
+                 + year_2016)
+  T.boot.b_2017[b] = summary(boot.model)$p.coeff[2]
+  T.boot.b_2018[b] = summary(boot.model)$p.coeff[3]
+  
+}
+alpha=0.05
+right.quantile_2017 = quantile(T.boot.b_2017, 1-alpha/2)
+left.quantile_2017 = quantile(T.boot.b_2017, alpha/2)
+CI.RP.b_2017 = c(b.obs_2017 - (right.quantile_2017 - b.obs_2017), b.obs_2017 - (left.quantile_2017 - b.obs_2017))
+CI.RP.b_2017
+right.quantile_2018 = quantile(T.boot.b_2018, 1-alpha/2)
+left.quantile_2018 = quantile(T.boot.b_2018, alpha/2)
+CI.RP.b_2018 = c(b.obs_2018 - (right.quantile_2018 - b.obs_2018), b.obs_2018 - (left.quantile_2018 - b.obs_2018))
+CI.RP.b_2018
+
+
+# Can be compared to a model without dependence on 2016 also for the interaction with a proper test (later)
+model_gam_no2016_never= gam(avg_delay_arr ~ s(avg_delay_dep, by=year_2016, bs = 'cr') 
+                      + s(avg_journey, by=year_2016, bs ='cr') + s(num_trips, bs='cr')
+                      + year_2016)
+summary(model_gam_no2016_never)
+x11()
+par(mfcol=c(2, 2))
+plot(model_gam_no2016_never)
+
 
 # ANOVA sulla differenza della media nei 4 anni
 
