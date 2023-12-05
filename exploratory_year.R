@@ -126,6 +126,117 @@ plot(model_gam)
 
 # ANOVA sulla differenza della media nei 4 anni
 
+
+#CI: T bootstrap, done on a univariate variable, within the 4 years (Bonferroni correction with k=4)
+k = 4 #correzione perchè ci sono 4 anni differenti
+B <- 1e3
+SEED = 14062000
+ALPHA = 0.05
+
+#IC per avg delay at dep (devo modificare il titolo e il nome degli assi nel grafico)
+variabile=data$avg_delay_all_departing
+
+
+mu.hat_2015 <- mean(variabile[i_2015])
+mu.hat_2016 <- mean(variabile[i_2016])
+mu.hat_2017 <- mean(variabile[i_2017])
+mu.hat_2018 <- mean(variabile[i_2018])
+
+sigma.hat_2015 <- sd(variabile[i_2015])
+sigma.hat_2016 <- sd(variabile[i_2016])
+sigma.hat_2017 <- sd(variabile[i_2017])
+sigma.hat_2018 <- sd(variabile[i_2018])
+
+
+set.seed(SEED)
+t.boot_2015 <- as.numeric(B)
+t.boot_2016 <- as.numeric(B)
+t.boot_2017 <- as.numeric(B)
+t.boot_2018 <- as.numeric(B)
+
+for (b in 1:B){
+  x.boot_2015 <- sample(variabile[i_2015], replace=T)
+  x.boot_2016 <- sample(variabile[i_2016], replace=T)
+  x.boot_2017 <- sample(variabile[i_2017], replace=T)
+  x.boot_2018 <- sample(variabile[i_2018], replace=T)
+  
+  mu.boot_2015 <- mean(x.boot_2015)
+  mu.boot_2016 <- mean(x.boot_2016)
+  mu.boot_2017 <- mean(x.boot_2017)
+  mu.boot_2018 <- mean(x.boot_2018)
+  
+  sigma.boot_2015 <- sd(x.boot_2015)
+  sigma.boot_2016 <- sd(x.boot_2016)
+  sigma.boot_2017 <- sd(x.boot_2017)
+  sigma.boot_2018 <- sd(x.boot_2018)
+  
+  
+  t.boot_2015[b] <- (mu.boot_2015 - mu.hat_2015) / sigma.boot_2015
+  t.boot_2016[b] <- (mu.boot_2016 - mu.hat_2016) / sigma.boot_2016
+  t.boot_2017[b] <- (mu.boot_2017 - mu.hat_2017) / sigma.boot_2017
+  t.boot_2018[b] <- (mu.boot_2018 - mu.hat_2018) / sigma.boot_2018
+  
+}
+
+
+
+q.low_2015 <- quantile(t.boot_2015, ALPHA/(2*k))
+q.low_2016 <- quantile(t.boot_2016, ALPHA/(2*k))
+q.low_2017 <- quantile(t.boot_2017, ALPHA/(2*k))
+q.low_2018 <- quantile(t.boot_2018, ALPHA/(2*k))
+
+q.up_2015 <- quantile(t.boot_2015, 1-ALPHA/(2*k))
+q.up_2016 <- quantile(t.boot_2016, 1-ALPHA/(2*k))
+q.up_2017 <- quantile(t.boot_2017, 1-ALPHA/(2*k))
+q.up_2018 <- quantile(t.boot_2018, 1-ALPHA/(2*k))
+
+CI_2015 <- c(lower=mu.hat_2015 - q.up_2015 * sigma.hat_2015,
+                           point=mu.hat_2015,
+                           upper=mu.hat_2015 - q.low_2015 * sigma.hat_2015)
+CI_2016 <- c(lower=mu.hat_2016 - q.up_2016 * sigma.hat_2016,
+                       point=mu.hat_2016,
+                       upper=mu.hat_2016 - q.low_2016 * sigma.hat_2016)
+CI_2017 <- c(lower=mu.hat_2017 - q.up_2017 * sigma.hat_2017,
+                       point=mu.hat_2017,
+                       upper=mu.hat_2017 - q.low_2017 * sigma.hat_2017)
+CI_2018 <- c(lower=mu.hat_2018 - q.up_2018 * sigma.hat_2018,
+                       point=mu.hat_2018,
+                       upper=mu.hat_2018 - q.low_2018 * sigma.hat_2018)
+CI_2015
+CI_2016
+CI_2017
+CI_2018
+#poi, se voglio salvarli:
+#CI_var_2015=CI_2015
+#CI_var_2016=CI_2016
+#CI_var_2017=CI_2017
+#CI_var_2018=CI_2018
+
+
+
+x11()
+plot(rep(1,length(variabile[i_2015])), variabile[i_2015], 
+     xlim=c(0,5), ylim=c(min(variabile),max(variabile)),
+     xlab="Year", ylab="Average delay at the dep", 
+     main="Bootstrap 95% CI for the mean", col=unique(col_years)[1])
+points(rep(2,length(variabile[i_2016])), variabile[i_2016], col=unique(col_years)[2])
+points(rep(3,length(variabile[i_2017])), variabile[i_2017], col=unique(col_years)[3])
+points(rep(4,length(variabile[i_2018])), variabile[i_2018], col=unique(col_years)[4])
+
+points(1,CI_2015[1], col='black', lwd=10)
+points(1,CI_2015[3], col='black', lwd=10)
+segments(1,CI_2015[1], 1, CI_2015[3], col='black', lwd=5)
+points(2,CI_2016[1], col='black', lwd=10)
+points(2,CI_2016[3], col='black', lwd=10)
+segments(2,CI_2016[1], 2, CI_2016[3], col='black', lwd=5)
+points(3,CI_2017[1], col='black', lwd=10)
+points(3,CI_2017[3], col='black', lwd=10)
+segments(3,CI_2017[1], 3, CI_2017[3], col='black', lwd=5)
+points(4,CI_2018[1], col='black', lwd=10)
+points(4,CI_2018[3], col='black', lwd=10)
+segments(4,CI_2018[1], 4, CI_2018[3], col='black', lwd=5)
+
+
 # IC per ritardo all'arrivo nei 4 anni
 k = 4 #correzione perchè ci sono 4 anni differenti
 B <- 1e3
