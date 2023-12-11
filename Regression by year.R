@@ -23,13 +23,15 @@ graphics.off()
 
 data = read_excel('aggregated_trains_by_year.xlsx')
 data=data[-which(data$year==2017 & data$route=='PARIS LYON - GRENOBLE'),]
+data=data[-which(data$year==2017 & data$route=='SAINT ETIENNE CHATEAUCREUX - PARIS LYON'),]
+
 n = dim(data)[1]
 
 i_2015=which(data$year==2015)
 i_2016=which(data$year==2016)
 i_2017=which(data$year==2017)
 i_2018=which(data$year==2018)
-
+indexes=list(i_2015, i_2016, i_2017, i_2018)
 i_national = which(data$service=='National')
 i_international=which(data$service == 'International')
 
@@ -114,14 +116,18 @@ p_val
 # We would like to assess in which years there is a significant difference
 
 #### Confidence intervals with Bonferroni correction ####
-
-k = 4 # Bonferroni correction
 B = 1e3
 alpha = 0.05
 
 # Bootstrap T-intervals for avg delay at arrival
-variable=avg_delay_arr
+variable=avg_delay_arr-avg_delay_dep
 
+BootstrapCI = function(variable, alpha, B, indexes, var_name){
+k=4 # Bonferroni correction for 4 years
+i_2015=indexes[[1]]
+i_2016=indexes[[2]]
+i_2017=indexes[[3]]
+i_2018=indexes[[4]]
 # Observed parameter
 mu.hat_2015 = mean(variable[i_2015])
 mu.hat_2016 = mean(variable[i_2016])
@@ -191,14 +197,13 @@ center = c(CI_2015[2], CI_2016[2], CI_2017[2], CI_2018[2])
 upper = c(CI_2015[3], CI_2016[3], CI_2017[3], CI_2018[3])
 CI_avg_delay_arr = data.frame(lower, center, upper)
 rownames(CI_avg_delay_arr) = c(2015, 2016, 2017, 2018)
-CI_avg_delay_arr
 # Last interval doesn't intersect the other 3 so it is significantly higher
 # The other 3 intervals show some partial overlapping
 
 x11()
 plot(rep(1,length(variable[i_2015])), variable[i_2015], 
      xlim=c(0.5,4.5), ylim=c(min(variable),max(variable)),
-     xlab="Year", ylab="Average delay at arrival", xaxt='n',
+     xlab="Year", ylab=var_name, xaxt='n',
      main="Bootstrap 95% CI for the mean", col=unique(col_years)[1])
 points(rep(2,length(variable[i_2016])), variable[i_2016], col=unique(col_years)[2])
 points(rep(3,length(variable[i_2017])), variable[i_2017], col=unique(col_years)[3])
@@ -226,18 +231,24 @@ segments(4,CI_2018[1], 4, CI_2018[3], col='black', lwd=3)
 segments(4,CI_2018[1], 5, CI_2018[1], col='grey', lty=2)
 segments(4,CI_2018[3], 5, CI_2018[3], col='grey', lty=2)
 
+return(CI_avg_delay_arr)
+}
 # From these intervals, we can understand that the factor 'year' may be relevant
 # in building a regression model for the average delay at arrival
-
+CI = BootstrapCI(variable, alpha, B, indexes, 'Cumulated delay')
+CI
 #### Parametric model ####
 # We observe that the observations are not iid, there is a temporal dependence for observations of the same route
 
-initial_model = lm(avg_delay_arr ~ avg_delay_dep + avg_journey + year)
+initial_model = lm(avg_delay_arr ~ avg_delay_dep:year + avg_journey:year + year)
 summary(initial_model)
 
 x11()
-plot(initial_model$residuals)
+par(mfrow=c(2,2))
+plot(initial_model)
 
+vif(initial_model)
+#### LMM ####
 col_route = rainbow(length(unique(data$route)))
 x11()
 boxplot(initial_model$residuals ~ as.factor(data$route), col=col_route)
@@ -280,3 +291,23 @@ dotplot(ranef(mixed_model, condVar=T))
 x11()
 plot(mixed_model, resid(., type='pearson')~fitted(.)| year)
 
+#### GAM ####
+model_gam_inter = gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr') 
+                      + avg_journey:year + year)
+summary(model_gam_inter)
+x11()
+par(mfcol=c(2, 2))
+plot(model_gam_inter)
+
+
+
+#### Robust ####
+multiv = cbind(avg_delay_arr[i_2015], avg_delay_dep[i_2015])
+fit_MCD = covMcd(x = multiv, alpha = .75, nsamp = "best")
+fit_MCD
+
+ind_best_subset = fit_MCD$best
+ind_best_subset
+x11()
+plot(avg_delay_dep[i_2015], avg_delay_arr[i_2015], col=ifelse(1:n%in%ind_best_subset,"black","red"),pch=16)
+abline(a=0,b=1)
