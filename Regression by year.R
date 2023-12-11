@@ -279,3 +279,4 @@ dotplot(ranef(mixed_model, condVar=T))
 
 x11()
 plot(mixed_model, resid(., type='pearson')~fitted(.)| year)
+
