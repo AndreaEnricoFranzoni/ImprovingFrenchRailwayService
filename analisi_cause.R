@@ -31,11 +31,16 @@ colnames(cause)=nomi_cause
 #prendo le cause del 2018
 cause_2018=cause[i_2018,]
 cause_2018_comp=acomp(cause_2018) #è semplicemente un oggetto di classe compositional data, i dati non sono trasformati
-#Isometric log ratio transform
+#The general approach in analysing acomp objects is thus to perform classical multivariate analysis on clr/alr/ilr-transformed coordinates and to backtransform or display the results in such a way that they can be interpreted in terms of the original compositional parts.
+
+#Trasformazione: Isometric log ratio transform
 cause_2018_transformed=ilr(cause_2018) #questi sono i dati trasformati: è un oggetto da S^6 in R^5
 
 finestra_grafica(t)
 plot(cause_2018_comp)         #plot dei simplessi
+
+finestra_grafica(t)
+barplot(colMeans(cause_2018_comp))
 
 finestra_grafica(t)
 plot(cause_2018_transformed) #scatter dei dati trasformati: COME INTERPRETARLI??
@@ -51,3 +56,5 @@ summary(pc)
 finestra_grafica(t)
 plot(pc)
 pc$Loadings
+
+
