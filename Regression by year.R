@@ -300,12 +300,76 @@ plot(model_gam_inter)
 
 
 #### Robust ####
-multiv = cbind(avg_delay_arr[i_2015], avg_delay_dep[i_2015])
-fit_MCD = covMcd(x = multiv, alpha = .75, nsamp = "best")
+avg_dep = data$avg_delay_all_departing
+avg_arr = data$avg_delay_all_arriving
+canc_perc = data$num_of_canceled_trains/data$total_num_trips
+extreme_delay = data$num_greater_15_min_late/data$total_num_trips
+
+# 2015
+multiv_2015 = data.frame(avg_arr=avg_arr[i_2015], avg_dep=avg_dep[i_2015], cancelled_percentage=canc_perc[i_2015],
+                         extreme_delay=extreme_delay[i_2015], route=data$route[i_2015])
+N=dim(multiv_2015)[1]
+fit_MCD = covMcd(x = multiv_2015[,1:4], alpha = .75, nsamp = "best")
 fit_MCD
 
-ind_best_subset = fit_MCD$best
-ind_best_subset
+ind_best_subset_2015 = fit_MCD$best
+ind_best_subset_2015
+
+ind_out_MCD_2015 = setdiff(1:N,fit_MCD$best)
+ind_out_MCD_2015
+multiv_2015$route[ind_out_MCD_2015]
+
+#2016
+multiv_2016 = data.frame(avg_arr=avg_arr[i_2016], avg_dep=avg_dep[i_2016], cancelled_percentage=canc_perc[i_2016],
+                         extreme_delay=extreme_delay[i_2016], route=data$route[i_2016])
+N=dim(multiv_2016)[1]
+fit_MCD = covMcd(x = multiv_2016[,1:4], alpha = .75, nsamp = "best")
+fit_MCD
+
+ind_best_subset_2016 = fit_MCD$best
+ind_best_subset_2016
+
+ind_out_MCD_2016 = setdiff(1:N,fit_MCD$best)
+ind_out_MCD_2016
+multiv_2016$route[ind_out_MCD_2016]
+
+#2017
+multiv_2017 = data.frame(avg_arr=avg_arr[i_2017], avg_dep=avg_dep[i_2017], cancelled_percentage=canc_perc[i_2017],
+                         extreme_delay=extreme_delay[i_2017], route=data$route[i_2017])
+N=dim(multiv_2017)[1]
+fit_MCD = covMcd(x = multiv_2017[,1:4], alpha = .75, nsamp = "best")
+fit_MCD
+
+ind_best_subset_2017 = fit_MCD$best
+ind_best_subset_2017
+
+ind_out_MCD_2017 = setdiff(1:N,fit_MCD$best)
+ind_out_MCD_2017
+multiv_2017$route[ind_out_MCD_2017]
+
+
+#2018
+multiv_2018 = data.frame(avg_arr=avg_arr[i_2018], avg_dep=avg_dep[i_2018], cancelled_percentage=canc_perc[i_2018],
+                         extreme_delay=extreme_delay[i_2018], route=data$route[i_2018])
+N=dim(multiv_2018)[1]
+fit_MCD = covMcd(x = multiv_2018[,1:4], alpha = .75, nsamp = "best")
+fit_MCD
+
+ind_best_subset_2018 = fit_MCD$best
+ind_best_subset_2018
+
+ind_out_MCD_2018 = setdiff(1:N,fit_MCD$best)
+ind_out_MCD_2018
+multiv_2018$route[ind_out_MCD_2018]
+
+
 x11()
-plot(avg_delay_dep[i_2015], avg_delay_arr[i_2015], col=ifelse(1:n%in%ind_best_subset,"black","red"),pch=16)
-abline(a=0,b=1)
+par(mfrow=c(3,2))
+plot(avg_delay_dep[i_2018], avg_delay_arr[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
+plot(avg_delay_dep[i_2018], canc_perc[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
+plot(avg_delay_dep[i_2018], extreme_delay[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
+plot(avg_delay_arr[i_2018], canc_perc[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
+plot(avg_delay_arr[i_2018], extreme_delay[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
+plot(canc_perc[i_2018], extreme_delay[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
+
+

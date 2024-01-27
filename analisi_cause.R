@@ -1,5 +1,5 @@
 library(readxl)
-install.packages('compositions') #libreria che serve per trattare compositional data
+#install.packages('compositions') #libreria che serve per trattare compositional data
 library(compositions)
 library(robustbase)
 
@@ -9,13 +9,10 @@ finestra_grafica = function(t){
   else 
     return(x11())
 }
-t=0 #per chiamare in automatico il quartz, mettere un qualsiasi altro valore per avere x11()
+t=1 #per chiamare in automatico il quartz, mettere un qualsiasi altro valore per avere x11()
 
 #valuto l'effetto delle cause anno per anno: lo faccio con il 2018 perchè sono le più recenti
-data = read_excel('aggregated_trains_by_year.xlsx')
-#tolgo questo outlier(?)
-data=data[-which(data$year==2017 & data$route=='PARIS LYON - GRENOBLE'),]
-data=data[-which(data$year==2017 & data$route=='SAINT ETIENNE CHATEAUCREUX - PARIS LYON'),]
+data = read_excel('aggregated_trains_by_year_2701.xlsx')
 n = dim(data)[1]
 
 i_2015=which(data$year==2015)
@@ -56,5 +53,13 @@ summary(pc)
 finestra_grafica(t)
 plot(pc)
 pc$Loadings
+
+# Per Andrea o chi lo farà: 
+# Partire da regressione di avg_delay_late_at_arrival con tutti i loadings insieme e valutare se ci sono coefficienti non significativi.
+# Se ci sono coeff non significativi, interpretare quali cause non sono da considerare secondo la regressione
+# Utilizzare i loading con coefficiente significativo per fare robust multivariato a 2 a 2 (un loading e il delay ogni volta)
+# per capire quali tratte sono outlier secondo quel loading (e dunque secondo le cause associate)
+# è giusto farlo sul 2018 perché sono le più recenti e dunque possiamo dire alla compagnia di intervenire se ci sono risultati
+# significativi
 
 
