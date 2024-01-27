@@ -21,9 +21,7 @@ rm(list=ls())
 graphics.off()
 
 
-data = read_excel('aggregated_trains_by_year.xlsx')
-data=data[-which(data$year==2017 & data$route=='PARIS LYON - GRENOBLE'),]
-data=data[-which(data$year==2017 & data$route=='SAINT ETIENNE CHATEAUCREUX - PARIS LYON'),]
+data = read_excel('aggregated_trains_by_year_2701.xlsx')
 
 n = dim(data)[1]
 
