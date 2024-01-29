@@ -117,9 +117,9 @@ i=1
 sample1=rep(NA, 108)
 sample2=rep(NA, 108)
 for (route in unique(first_part$route)){
-    sample1[i] = first_part$perc_canc[which(first_part$route==route)]
-    sample2[i] = third_part$perc_canc[which(third_part$route==route)]
-    i=i+1
+  sample1[i] = first_part$perc_canc[which(first_part$route==route)]
+  sample2[i] = third_part$perc_canc[which(third_part$route==route)]
+  i=i+1
 }
 x11()
 par(mfrow=c(1,2))
@@ -144,9 +144,9 @@ T20
 B=1000
 T2 = numeric(B)
 for(perm in 1:B){
-    signs.perm = rbinom(n1, 1, 0.5)*2 - 1
-    diff_perm = diff* signs.perm
-    T2[perm]  = stat(diff_perm, mu0=mu0)
+  signs.perm = rbinom(n1, 1, 0.5)*2 - 1
+  diff_perm = diff* signs.perm
+  T2[perm]  = stat(diff_perm, mu0=mu0)
 }
 x11()
 par(mfrow=c(2,1))
