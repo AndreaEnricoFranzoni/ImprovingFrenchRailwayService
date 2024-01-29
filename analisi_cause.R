@@ -26,12 +26,15 @@ cause=data[,14:19]
 colnames(cause)=nomi_cause
 
 #prendo le cause del 2018
+# per il momento ne lascio 6, però sarebbe sensato accorpare le due non direttamente imputabili
+# alla compagnia, e vedere il rapporto di ogni causa riguardante la compgnai singolarmente su quelle che non la riguardano
 cause_2018=cause[i_2018,]
 cause_2018_comp=acomp(cause_2018) #è semplicemente un oggetto di classe compositional data, i dati non sono trasformati
 #The general approach in analysing acomp objects is thus to perform classical multivariate analysis on clr/alr/ilr-transformed coordinates and to backtransform or display the results in such a way that they can be interpreted in terms of the original compositional parts.
 
-#Trasformazione: Isometric log ratio transform
-cause_2018_transformed=ilr(cause_2018) #questi sono i dati trasformati: è un oggetto da S^6 in R^5
+#Trasformazione: cemtered log ratio transform
+cause_2018_transformed=clr(cause_2018) #questi sono i dati trasformati: è un oggetto da S^6 in R^6:
+#same transformation used by the SPCA
 
 finestra_grafica(t)
 plot(cause_2018_comp)         #plot dei simplessi
@@ -53,6 +56,8 @@ summary(pc)
 finestra_grafica(t)
 plot(pc)
 pc$Loadings
+pc$scores
+biplot(pc)  
 
 # Per Andrea o chi lo farà: 
 # Partire da regressione di avg_delay_late_at_arrival con tutti i loadings insieme e valutare se ci sono coefficienti non significativi.
@@ -63,3 +68,13 @@ pc$Loadings
 # significativi
 
 
+response = as.matrix(data[i_2018,13]) #avg_delay_late_at_arrival
+covariates = pc$scores
+x1 = covariates[,1]
+x2 = covariates[,2]
+x3 = covariates[,3]
+x4 = covariates[,4]
+x5 = covariates[,5]
+
+fit = lm( response ~ x1 + x2 + x3 + x4 + x5)
+summary(fit)
