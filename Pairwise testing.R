@@ -19,7 +19,7 @@ library(lme4)
 library(insight)
 rm(list=ls())
 graphics.off()
-set.seed(21100)
+set.seed(2024)
 
 data = read_excel('trains_update_2610.xlsx')
 # Data preprocessing
@@ -62,65 +62,191 @@ i_international=which(data$service == 'International')
 
 data_2018 = data[i_2018,]
 
+variable = data_2018$num_of_canceled_trains/data_2018$total_num_trips
+month = as.factor(data_2018$month)
 
-stat=function(sample1, mu0){
-    t1=median(sample1)
-    return ((t1-mu0)^2)
+x11()
+boxplot(variable ~ month)
+
+data_to_merge = data.frame(month=month, trips=data_2018$total_num_trips, canc=data_2018$num_of_canceled_trains, route=data_2018$route)
+
+
+temp = data_to_merge[which(data_to_merge$month%in%c(1,2,3)),]
+
+tot_trips = numeric(length(unique(temp$route)))
+tot_canc = numeric(length(unique(temp$route)))
+
+for(i in 1:length(unique(temp$route))){
+  tot_trips[i] = sum(temp$trips[which(temp$route==unique(temp$route)[i])]) 
+  tot_canc[i] = sum(temp$canc[which(temp$route==unique(temp$route)[i])])
 }
 
-# Testiamo marzo-aprile
-pval_vec = rep(NA, 10)
-shap_vec = rep(NA, 10)
-for(month in 1:10){
+first_part = data.frame(route=unique(temp$route), trips = tot_trips, canc=tot_canc, perc_canc = tot_canc/tot_trips)
+
+temp = data_to_merge[which(data_to_merge$month%in%c(4,5,6,7)),]
+
+tot_trips = numeric(length(unique(temp$route)))
+tot_canc = numeric(length(unique(temp$route)))
+
+for(i in 1:length(unique(temp$route))){
+  tot_trips[i] = sum(temp$trips[which(temp$route==unique(temp$route)[i])]) 
+  tot_canc[i] = sum(temp$canc[which(temp$route==unique(temp$route)[i])])
+}
+
+second_part = data.frame(route=unique(temp$route), trips = tot_trips, canc=tot_canc, perc_canc = tot_canc/tot_trips)
+
+temp = data_to_merge[which(data_to_merge$month%in%c(8,9,10,11)),]
+
+tot_trips = numeric(length(unique(temp$route)))
+tot_canc = numeric(length(unique(temp$route)))
+
+for(i in 1:length(unique(temp$route))){
+  tot_trips[i] = sum(temp$trips[which(temp$route==unique(temp$route)[i])]) 
+  tot_canc[i] = sum(temp$canc[which(temp$route==unique(temp$route)[i])])
+}
+
+third_part = data.frame(route=unique(temp$route), trips = tot_trips, canc=tot_canc, perc_canc = tot_canc/tot_trips)
+
+stat=function(sample1, mu0){
+  t1=median(sample1)
+  return ((t1-mu0)^2)
+}
+
+# Testiamo first vs third
 i=1
 sample1=rep(NA, 108)
 sample2=rep(NA, 108)
-for (route in unique(data_2018$route)){
-  sample1[i] = data_2018$num_of_canceled_trains[which(data_2018$route==route & data_2018$month==month)]/
-    data_2018$total_num_trips[which(data_2018$route==route & data_2018$month==month)]
-  sample2[i] = data_2018$num_of_canceled_trains[which(data_2018$route==route & data_2018$month==(month+1))]/
-    data_2018$total_num_trips[which(data_2018$route==route & data_2018$month==(month+1))]
-  i=i+1
+for (route in unique(first_part$route)){
+    sample1[i] = first_part$perc_canc[which(first_part$route==route)]
+    sample2[i] = third_part$perc_canc[which(third_part$route==route)]
+    i=i+1
 }
-# x11()
-# par(mfrow=c(1,2))
-# hist(sample1)
-# hist(sample2)
-# x11()
-# par(mfrow=c(1,2))
-# boxplot(sample1)
-# boxplot(sample2)
+x11()
+par(mfrow=c(1,2))
+hist(sample1)
+hist(sample2)
+x11()
+par(mfrow=c(1,2))
+boxplot(sample1)
+boxplot(sample2)
 p = 1
 n1 = length(sample1)
 n2 = length(sample2)
 n  = n1 + n2
 mu0 = 0
 diff = sample1-sample2
-# x11()
-# boxplot(diff)
-# hist(diff)
-shap_vec[month]=shapiro.test(diff)$p.value
+x11()
+boxplot(diff)
+hist(diff)
+shapiro.test(diff)$p.value
 T20 = stat(diff, mu0=mu0)
 T20
 B=1000
 T2 = numeric(B)
 for(perm in 1:B){
-  signs.perm = rbinom(n1, 1, 0.5)*2 - 1
-  diff_perm = diff* signs.perm
-  T2[perm]  = stat(diff_perm, mu0=mu0)
+    signs.perm = rbinom(n1, 1, 0.5)*2 - 1
+    diff_perm = diff* signs.perm
+    T2[perm]  = stat(diff_perm, mu0=mu0)
 }
-# x11()
-# par(mfrow=c(2,1))
-# hist(T2,xlim=range(c(T2,T20)))
-# abline(v=T20,col=3,lwd=4)
-# plot(ecdf(T2),xlim=range(c(T2,T20)))
-# abline(v=T20,col=3,lwd=4)
+x11()
+par(mfrow=c(2,1))
+hist(T2,xlim=range(c(T2,T20)))
+abline(v=T20,col=3,lwd=4)
+plot(ecdf(T2),xlim=range(c(T2,T20)))
+abline(v=T20,col=3,lwd=4)
+pval = sum(T2>=T20)/B
 
-pval_vec[month] = sum(T2>=T20)/B
-if(shap_vec[month]>0.05)
-pval_vec[month]=t.test(diff, alternative = "two.sided", mu=0)$p.value
+
+B=1000
+
+T.obs = mean(diff)
+T.obs
+set.seed(2024)
+cl=makeCluster(parallel::detectCores()/2)
+clusterExport(cl=cl,list('diff'))
+T.boot=pbreplicate(B, mean(sample(diff, replace = T)),cl=cl)
+
+# Bootstrap CI (reverse)
+alpha = 0.05
+right.quantile = quantile(T.boot, 1 - alpha/2)
+left.quantile = quantile(T.boot, alpha/2)
+
+CI.RP = c(T.obs - (right.quantile - T.obs),
+          T.obs - (left.quantile - T.obs))
+names(CI.RP) = c("lwr", "upr")
+CI.RP
+
+x11()
+plot(ecdf(T.boot), main='Sample distribution')
+abline(v = T.obs, lty=2)
+abline(v = CI.RP)
+
+
+
+
+temp = data_to_merge[which(data_to_merge$month%in%c(1,2,3,8,9,10,11)),]
+
+tot_trips = numeric(length(unique(temp$route)))
+tot_canc = numeric(length(unique(temp$route)))
+
+for(i in 1:length(unique(temp$route))){
+  tot_trips[i] = sum(temp$trips[which(temp$route==unique(temp$route)[i])]) 
+  tot_canc[i] = sum(temp$canc[which(temp$route==unique(temp$route)[i])])
 }
-pval_vec
-shap_vec
 
-pval_vec[2]
+external_part = data.frame(route=unique(temp$route), trips = tot_trips, canc=tot_canc, perc_canc = tot_canc/tot_trips)
+
+
+# Testiamo second vs other
+i=1
+sample1=rep(NA, 108)
+sample2=rep(NA, 108)
+for (route in unique(first_part$route)){
+  sample1[i] = second_part$perc_canc[which(second_part$route==route)]
+  sample2[i] = external_part$perc_canc[which(external_part$route==route)]
+  i=i+1
+}
+x11()
+par(mfrow=c(1,2))
+hist(sample1)
+hist(sample2)
+x11()
+par(mfrow=c(1,2))
+boxplot(sample1)
+boxplot(sample2)
+p = 1
+n1 = length(sample1)
+n2 = length(sample2)
+n  = n1 + n2
+mu0 = 0
+diff = sample1-sample2
+x11()
+boxplot(diff)
+hist(diff)
+# not symmetric, we can't use a permutational approach and neither parametric because it is not gaussian
+shapiro.test(diff)$p.value
+
+
+B=1000
+
+T.obs = median(diff)
+T.obs
+set.seed(2024)
+cl=makeCluster(parallel::detectCores()/2)
+clusterExport(cl=cl,list('diff'))
+T.boot=pbreplicate(B, median(sample(diff, replace = T)),cl=cl)
+
+# Bootstrap CI (reverse)
+alpha = 0.05
+right.quantile = quantile(T.boot, 1 - alpha/2)
+left.quantile = quantile(T.boot, alpha/2)
+
+CI.RP = c(T.obs - (right.quantile - T.obs),
+          T.obs - (left.quantile - T.obs))
+names(CI.RP) = c("lwr", "upr")
+CI.RP
+
+x11()
+plot(ecdf(T.boot), main='Sample distribution')
+abline(v = T.obs, lty=2)
+abline(v = CI.RP)
