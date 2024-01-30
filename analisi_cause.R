@@ -32,38 +32,35 @@ cause_2018=cause[i_2018,]
 n_2018 = dim(cause_2018)[1]
 cause_2018_comp=acomp(cause_2018) #è semplicemente un oggetto di classe compositional data, i dati non sono trasformati
 #The general approach in analysing acomp objects is thus to perform classical multivariate analysis on clr/alr/ilr-transformed coordinates and to backtransform or display the results in such a way that they can be interpreted in terms of the original compositional parts.
-
-#Trasformazione: cemtered log ratio transform
-cause_2018_transformed=clr(cause_2018) #questi sono i dati trasformati: è un oggetto da S^6 in R^6:
-#same transformation used by the SPCA
-
 finestra_grafica(t)
 plot(cause_2018_comp)         #plot dei simplessi
 
 finestra_grafica(t)
 barplot(colMeans(cause_2018_comp))
 
-finestra_grafica(t)
-plot(cause_2018_transformed) #scatter dei dati trasformati: COME INTERPRETARLI??
+#Trasformazione: centered log ratio transform: data are mapped from S^6 to R^6
+cause_2018_transformed=clr(cause_2018) #questi sono i dati trasformati: è un oggetto da S^6 in R^6:
+#same transformation used by the SPCA
 
 finestra_grafica(t)
-boxplot(cause_2018_comp)
+plot(cause_2018_transformed) #scatter dei dati trasformati: COME INTERPRETARLI??
 
 
 
 
 #idea: per prima cosa, dividere in due: cause dovute alla compagnia e no
+#in realtà parto dall'averne tre, perchè il simplesso viene più carino
 cause_tricotomiche_2018 = data.frame( interne = cause_2018[,2]+cause_2018[,3]+cause_2018[,4]+cause_2018[,5], travelers = cause_2018[,6], other=cause_2018[,6] )
-colnames(cause_tricotomiche_2018)=c('Internal','Traverles','Other')
+colnames(cause_tricotomiche_2018)=c('Internal','Travelers','Other')
 cause_tricotomiche_2018_comp = acomp(cause_tricotomiche_2018)
 
 finestra_grafica(t)
 plot(cause_tricotomiche_2018_comp)  
-#è un plot molto brutto, però è significativo: la maggior parte della colpa per i
-#ritardi è da imputare all'azienda
+#è un plot brutto da vedere, però mostra come la maggior parte delle cause dei ritardi siano dovuti 
+#a un qualcosa di direttamente imputabile alla compagnia
 
 #passo a un dataset bivariato
-cause_dicotomiche_2018 = data.frame(interne = cause_tricotomiche_2018$Internal, esterne = cause_tricotomiche_2018$Traverles+cause_tricotomiche_2018$Other)
+cause_dicotomiche_2018 = data.frame(interne = cause_tricotomiche_2018$Internal, esterne = cause_tricotomiche_2018$Travelers+cause_tricotomiche_2018$Other)
 colnames(cause_dicotomiche_2018)=c('Internal','External')
 cause_dicotomiche_2018_comp = acomp(cause_dicotomiche_2018)
 
@@ -72,6 +69,7 @@ barplot(colMeans(cause_dicotomiche_2018_comp))
 
 #devo vedere il rapporto tra due dati: isometric log ratio
 cause_dicotomiche_2018_trans = ilr(cause_dicotomiche_2018_comp)
+# è praticamente (1/radice(2))log(esterne/interne)
 
 finestra_grafica(t)
 plot(1:n_2018,cause_dicotomiche_2018_trans)
@@ -79,7 +77,11 @@ plot(1:n_2018,cause_dicotomiche_2018_trans)
 
 
 ###########
-pc <- princomp(acomp(cause_2018))
+#come funziona: è la PCA normale su una trasformazione specifica:
+#io devo passare un oggetto acomp
+# di default usa la clr
+pc <- princomp((acomp(cause_2018))) #usa la clr: ho 6 scores perchè sono in R6
+#pc = princomp(ilr(acomp(cause_2018)))  #sto mettendo la ilr: ho 5 scores perchè fatto in R5
 pc
 summary(pc)
 finestra_grafica(t)
@@ -88,6 +90,8 @@ pc$Loadings
 pc$scores
 biplot(pc)  
 
+pc = princomp(acomp(cause_dicotomiche_2018))
+summary(pc)
 
 
 # Per Andrea o chi lo farà: 
@@ -98,15 +102,4 @@ biplot(pc)
 # è giusto farlo sul 2018 perché sono le più recenti e dunque possiamo dire alla compagnia di intervenire se ci sono risultati
 # significativi
 
-
-response = as.matrix(data[i_2018,13]) #avg_delay_late_at_arrival
-covariates = pc$scores
-x1 = covariates[,1]
-x2 = covariates[,2]
-x3 = covariates[,3]
-x4 = covariates[,4]
-x5 = covariates[,5]
-
-fit = lm( response ~ x1 + x2 + x3 + x4 + x5)
-summary(fit)
 
