@@ -29,6 +29,7 @@ colnames(cause)=nomi_cause
 # per il momento ne lascio 6, però sarebbe sensato accorpare le due non direttamente imputabili
 # alla compagnia, e vedere il rapporto di ogni causa riguardante la compgnai singolarmente su quelle che non la riguardano
 cause_2018=cause[i_2018,]
+n_2018 = dim(cause_2018)[1]
 cause_2018_comp=acomp(cause_2018) #è semplicemente un oggetto di classe compositional data, i dati non sono trasformati
 #The general approach in analysing acomp objects is thus to perform classical multivariate analysis on clr/alr/ilr-transformed coordinates and to backtransform or display the results in such a way that they can be interpreted in terms of the original compositional parts.
 
@@ -50,6 +51,34 @@ boxplot(cause_2018_comp)
 
 
 
+
+#idea: per prima cosa, dividere in due: cause dovute alla compagnia e no
+cause_tricotomiche_2018 = data.frame( interne = cause_2018[,2]+cause_2018[,3]+cause_2018[,4]+cause_2018[,5], travelers = cause_2018[,6], other=cause_2018[,6] )
+colnames(cause_tricotomiche_2018)=c('Internal','Traverles','Other')
+cause_tricotomiche_2018_comp = acomp(cause_tricotomiche_2018)
+
+finestra_grafica(t)
+plot(cause_tricotomiche_2018_comp)  
+#è un plot molto brutto, però è significativo: la maggior parte della colpa per i
+#ritardi è da imputare all'azienda
+
+#passo a un dataset bivariato
+cause_dicotomiche_2018 = data.frame(interne = cause_tricotomiche_2018$Internal, esterne = cause_tricotomiche_2018$Traverles+cause_tricotomiche_2018$Other)
+colnames(cause_dicotomiche_2018)=c('Internal','External')
+cause_dicotomiche_2018_comp = acomp(cause_dicotomiche_2018)
+
+finestra_grafica(t)
+barplot(colMeans(cause_dicotomiche_2018_comp))
+
+#devo vedere il rapporto tra due dati: isometric log ratio
+cause_dicotomiche_2018_trans = ilr(cause_dicotomiche_2018_comp)
+
+finestra_grafica(t)
+plot(1:n_2018,cause_dicotomiche_2018_trans)
+
+
+
+###########
 pc <- princomp(acomp(cause_2018))
 pc
 summary(pc)
@@ -58,6 +87,8 @@ plot(pc)
 pc$Loadings
 pc$scores
 biplot(pc)  
+
+
 
 # Per Andrea o chi lo farà: 
 # Partire da regressione di avg_delay_late_at_arrival con tutti i loadings insieme e valutare se ci sono coefficienti non significativi.
@@ -78,3 +109,4 @@ x5 = covariates[,5]
 
 fit = lm( response ~ x1 + x2 + x3 + x4 + x5)
 summary(fit)
+
