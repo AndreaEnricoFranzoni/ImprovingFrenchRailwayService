@@ -98,7 +98,7 @@ finestra_grafica(t)
 plot(pc)
 pc$Loadings
 pc$scores
-biplot(pc)  
+biplot(pc)  #non funziona perchè ho solo una PC importante
 
 # Per Andrea o chi lo farà: 
 # Partire da regressione di avg_delay_late_at_arrival con tutti i loadings insieme e valutare se ci sono coefficienti non significativi.
@@ -108,7 +108,9 @@ biplot(pc)
 # è giusto farlo sul 2018 perché sono le più recenti e dunque possiamo dire alla compagnia di intervenire se ci sono risultati
 # significativi
 
+#in realtà, provo con
 response = data$avg_delay_late_on_arrival[i_2018]
+#response = data$avg_delay_late_on_arrival[i_2018] - data$avg_delay_late_at_departure[i_2018]
 
 #first model: about only the two
 clr_internal = pc$scores[,1] 
@@ -146,6 +148,13 @@ x2 = trasf_cause[,2]
 x3 = trasf_cause[,3]
 x4 = trasf_cause[,4]
 
+
+
+
+
+
+
+######QUESTA PARTE SE LA RISPOSTA E' SOLO IL RITARDO ALL'ARRIVO
 fit_2 = lm( response ~ x1 + x2 + x3 + x4)
 summary(fit_2)
 shapiro.test(fit_2$residuals)
@@ -153,6 +162,8 @@ shapiro.test(fit_2$residuals)
 
 vif(fit_2)
 #no problem of collinearity
+
+
 
 fit_2_red = lm( response ~ x1 + x3 + x4)
 summary(fit_2_red)
@@ -192,15 +203,19 @@ shapiro.test(model_semiparam$residuals)
 
 anova(model_semiparam,model_gam, test = "F") 
 #the pavalue is 0.02955: I have to reject H0: I have to retain the nonparametric model
-#but I try to reduce it: I can do it since I have gaussianity
+#but I try another one
 model_gam_red=gam(response ~ s(x2,bs='cr') + s(x3,bs='cr') + s(x4,bs='cr') )
 summary(model_gam_red)
 #ANOVA test:
 anova(model_gam_red,model_gam, test = "F") 
 #pvalue: 0.5846: I can use the reduced: so it seems that the first one(related to rail infrastrcuture, does not influence anything)
 
-model = model_gam_red
+model = model_gam_red # y = f2(x2) + f3(x3) + f4(x4) + eps
 summary(model)
+
+finestra_grafica(t)
+#par(mfrow=c(1,3))
+plot(model)
 
 bounds_x1 = c(min(x1),max(x1))
 bounds_x2 = c(min(x2),max(x2))
@@ -257,4 +272,113 @@ ggplot(S)
 #it demonstrates what we have seen until now: rail infrastructure is not so important.
 #Taking account of the rolling stock increases it
 
+
 #TODO: taking account of the variables one at the time as regressor
+#Firstly: linear model: do not make sense obv making the gam since it is already here
+
+fit_x1 = lm(response ~ x1)
+summary(fit_x1)
+#questo modello non è assolutamente significativo dal momento che ha un R2 di 0.02922
+
+fit_x2 = lm(response ~ x2)
+summary(fit_x2)
+#questo modello non è assolutamente significativo dal momdento che ha un R2 di 0.006124
+
+fit_x3 = lm(response ~ x3)
+summary(fit_x3)
+#questo modello non è assolutamente significativo dal momdento che ha un R2 di 0.1241
+
+fit_x4 = lm(response ~ x4)
+summary(fit_x4)
+#questo modello non è assolutamente significativo dal momdento che ha un R2 di 0.1202
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######QUESTA PARTE SE LA RISPOSTA E' IL RITARDO ACCUMULATO
+fit_2 = lm( response ~ x1 + x2 + x3 + x4)
+summary(fit_2)
+shapiro.test(fit_2$residuals)
+#i residui sono gaussiani: posso considerare i test esatti
+
+fit_2_red = lm( response ~ x2 + x3 + x4)
+summary(fit_2_red)
+shapiro.test(fit_2_red$residuals)
+
+fit_2_red_2 = lm( response ~ x3 + x4)
+summary(fit_2_red_2)
+shapiro.test(fit_2_red_2$residuals)
+
+fit_2_red_3 = lm( response ~ x4)
+summary(fit_2_red_3)
+shapiro.test(fit_2_red_3$residuals)
+
+#in this case, the interaction between the four internal causes is the only one that matters:
+# it is the inclusion of Station management that make that regressor matters
+# the coefficient is positive: so, if x4 increases, also the response does
+# the R^2 is 0.2106: not a lot
+
+#ora provo a fare un gam, per 
+model_gam=gam(response ~ s(x1,bs='cr') + s(x2,bs='cr') + s(x3,bs='cr') + s(x4,bs='cr') )
+summary(model_gam)
+#it seems to explaining it better
+shapiro.test(model_gam$residuals)
+#I have gaussianity
+
+#there is linearity between some coefficients
+model_gam_red = gam(response ~ s(x2,bs='cr') + s(x3,bs='cr') + s(x4,bs='cr')  )
+summary(model_gam_red)
+# I have gaussianity
+
+model_gam_red_2 = gam(response ~  s(x3,bs='cr') + s(x4,bs='cr')  )
+summary(model_gam_red_2)
+
+anova(model_gam_red_2,model_gam, test = "F") 
+#pvalue high: 0.6594: I take the reduced
+
+model_semiparam_red_2 = gam(response ~  s(x3,bs='cr') + x4  )
+summary(model_semiparam_red_2)
+
+anova(model_semiparam_red_2,model_gam_red_2)
+
+
+#ANOVA permutational: il test parametrico non plotta il pvalue
+fitted.obs <- model_semiparam_red_2$fitted.values 
+res.obs <- model_semiparam_red_2$residuals
+T_0 <- anova(model_semiparam_red_2,model_gam_red_2, test = "F")$F[2]
+B=1000
+T2 <- numeric(B)
+set.seed(230300)
+for (perm in 1:B) {
+  res_reduced_perm <- res.obs[sample(1:length(i_2018))]
+  y_perm <- fitted.obs + res_reduced_perm
+
+  
+  model_semiparam_red_perm = gam(y_perm ~  s(x3,bs='cr') + x4  )
+  model_gam_red_perm = gam(y_perm ~ s(x3,bs='cr') + s(x4,bs='cr'))
+  T2[perm] <- anova(model_semiparam_red_perm,model_gam_red_perm, test = "F")$F[2]
+  
+}
+pval=sum(T2>=T_0)/B
+pval
+
+
+
+
+
+
