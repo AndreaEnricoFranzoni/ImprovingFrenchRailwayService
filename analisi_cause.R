@@ -143,11 +143,16 @@ trasf_cause = ilr(cause_2018_dati)
 #what I have: I am in R4, having the log of the ratio between all the internal over
 # the externals: take a look to better see it
 
-x1 = trasf_cause[,1]
-x2 = trasf_cause[,2]
-x3 = trasf_cause[,3]
-x4 = trasf_cause[,4]
+x1 = trasf_cause[,1] #costante*log(rail_infrastructure/traffic_management)
+x2 = trasf_cause[,2] #costante*log(rail_infrastructure*traffic_management/Rolling_stock)
+x3 = trasf_cause[,3] #costante*log(rail_infrastructure*traffic_management*Rolling_stock/station_management)
+x4 = trasf_cause[,4] #costante*log(prodotto_cause_interne/cause_esterne)
 
+#interpretazione:
+# x1: quanto rail_inf sia maggiore di traffic_management
+# x2: quanto l'interazione tra rail_infrastructure e traffic_management sia maggiore di rolling stock
+# x3: quanto l'interazione tra rail_infrastructure e traffic_management e rolling stock sia maggiore di station_management
+# x4: quanto l'interazione tra le cause interne sia maggiore di quelle esterne
 
 
 
@@ -292,8 +297,7 @@ fit_x4 = lm(response ~ x4)
 summary(fit_x4)
 #questo modello non è assolutamente significativo dal momdento che ha un R2 di 0.1202
 
-
-
+#model to be used: the gam above this section
 
 
 
