@@ -143,10 +143,10 @@ trasf_cause = ilr(cause_2018_dati)
 #what I have: I am in R4, having the log of the ratio between all the internal over
 # the externals: take a look to better see it
 
-x1 = trasf_cause[,1] #costante*log(rail_infrastructure/traffic_management)
-x2 = trasf_cause[,2] #costante*log(rail_infrastructure*traffic_management/Rolling_stock)
-x3 = trasf_cause[,3] #costante*log(rail_infrastructure*traffic_management*Rolling_stock/station_management)
-x4 = trasf_cause[,4] #costante*log(prodotto_cause_interne/cause_esterne)
+x1 = trasf_cause[,1] #(radice(1/2))*log(rail_infrastructure/traffic_management)
+x2 = trasf_cause[,2] #(radice(2/3))*log(rail_infrastructure*traffic_management/Rolling_stock)
+x3 = trasf_cause[,3] #(radice(3/4))*log(rail_infrastructure*traffic_management*Rolling_stock/station_management)
+x4 = trasf_cause[,4] #(radice(4/5))*log(prodotto_cause_interne/cause_esterne)
 
 #interpretazione:
 # x1: quanto rail_inf sia maggiore di traffic_management
@@ -221,7 +221,28 @@ summary(model)
 finestra_grafica(t)
 #par(mfrow=c(1,3))
 plot(model)
+#dal plot:
+#f2(x2): cresce se: rail_infrastructure*traffic_management  < rolling_stock o se rail_infrastructure*traffic_management  > rolling_stock
+#        circa costante se: rail_infrastructure*traffic_management  ~ rolling_stock
+#        decresce se: rail_infrastructure*traffic_management >> rolling_stock
+#f3(x3): cresce se: rail_infrastructure*traffic_management*rolling stock ~ station_management/2
+#        circa costante se: rail_infrastructure*traffic_management*rolling stock ~ station_management
+#        decresce se: in generale se il rapporto è <1, molto più velocemente se rail_infrastructure*traffic_management*rolling stock << station_management
+#f4(x4): è una funzione quasi lineare, cosstantemente crescente, per interazione_interne > esterne
+#
+#Interpretazione:
+#f2(x2): è positiva se il numeratore è maggiore del denominatore (non guadare l'estremità sinistra dal momento che non vi sono tante unià in essa)
+#        significa che rail_infrastructure*traffic_management ha un impatto maggiore sul ritardo all'arrivo delle rotaie in se
+#        La rotaie sono probabilmente la causa che meno influisce sul ritardo
+#f3(x3): dimostra come station management sia la causa più importante di tutte per un incremento del ritardo medio: il picco è circa 10, ma assume
+#        valori positivi soprattutto dove il denominatore è maggiore del numeratore
+#f4(x4): dice semplicemente che l'effetto di cause interne, tra loro, abbia un maggior effetto sul ritarfo rispetto che a quelle esterne:
+#        probabilmente, è dovuto anche al fatto che le cause esterne sono molto meno frequenti di quelle interne;
 
+
+
+
+#SA
 bounds_x1 = c(min(x1),max(x1))
 bounds_x2 = c(min(x2),max(x2))
 bounds_x3 = c(min(x3),max(x3))
@@ -249,8 +270,11 @@ print(S)
 
 finestra_grafica(t)
 ggplot(S)
-#x3 seems to be the most relevant features: the introduction of the rolling stock in the 
-#variables made it increase
+#x2: buon effetto, comunque positivo
+#
+#x3: è quello che ha un maggior effetto sulla varianza della risposta: si nota come abbia un effetto maggiormente positivo: dunque, station management è quella che aumenta di più il ritardo medio
+#
+#x4: effetto prettamente positivo
 
 #for the sake of curiosity: I run it on the complete gam
 sample1 = randomLHS(1000,4)
@@ -275,7 +299,7 @@ finestra_grafica(S_gam)
 ggplot(S)
 
 #it demonstrates what we have seen until now: rail infrastructure is not so important.
-#Taking account of the rolling stock increases it
+#the most important thing is to hace
 
 
 #TODO: taking account of the variables one at the time as regressor
