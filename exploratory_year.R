@@ -14,9 +14,7 @@ library(mgcv)
 rm(list=ls())
 graphics.off()
 
-data = read_excel('aggregated_trains_by_year.xlsx')
-# We remove an evident outlier
-data=data[-which(data$year==2017 & data$route=='PARIS LYON - GRENOBLE'),]
+data = read_excel('aggregated_trains_by_year_2701.xlsx')
 n = dim(data)[1]
 
 i_2015=which(data$year==2015)

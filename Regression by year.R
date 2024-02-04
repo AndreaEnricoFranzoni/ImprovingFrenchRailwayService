@@ -118,7 +118,7 @@ B = 1e3
 alpha = 0.05
 
 # Bootstrap T-intervals for avg delay at arrival
-variable=avg_delay_arr-avg_delay_dep
+variable=avg_delay_arr#-avg_delay_dep
 
 BootstrapCI = function(variable, alpha, B, indexes, var_name){
 k=4 # Bonferroni correction for 4 years
@@ -233,7 +233,7 @@ return(CI_avg_delay_arr)
 }
 # From these intervals, we can understand that the factor 'year' may be relevant
 # in building a regression model for the average delay at arrival
-CI = BootstrapCI(variable, alpha, B, indexes, 'Cumulated delay')
+CI = BootstrapCI(variable, alpha, B, indexes, 'Mean average delay at arrival (min)')
 CI
 #### Parametric model ####
 # We observe that the observations are not iid, there is a temporal dependence for observations of the same route
