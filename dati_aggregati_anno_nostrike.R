@@ -131,7 +131,7 @@ data_2016 = data_agg
 #### DATA 2016 - NO STRIKE ####
 month=col_month[which(dataset$year==2016)]
 data=dataset[which(dataset$year==2016),]
-data=data[-which(month==6),]
+data=data[-which(month%in%c(3,4,6)),]
 data_2016 =  matrix(NA, nrow=length(unique(data$route)), ncol=dim(data)[2])
 data_agg = matrix(NA, nrow=length(unique(data$route)), ncol=dim(data)[2])
 data_agg=as.data.frame(data_agg)
@@ -260,7 +260,7 @@ data_2018 = data_agg
 #### DATA 2018 - NO STRIKE ####
 month=col_month[which(dataset$year==2018)]
 data=dataset[which(dataset$year==2018),]
-data=data[-which(month%in%c(4,5,6,7)),]
+data=data[-which(month%in%c(3,4,5,6,7)),]
 data_2018 =  matrix(NA, nrow=length(unique(data$route)), ncol=dim(data)[2])
 data_agg = matrix(NA, nrow=length(unique(data$route)), ncol=dim(data)[2])
 data_agg=as.data.frame(data_agg)
@@ -306,5 +306,5 @@ data_agg = rbind(data_2015,data_2016,data_2017, data_2018)
 
 for(i in 1:length(nas))
   data_agg=data_agg[-which(data_agg$route ==nas[i]),]                             # we drop all routes that exceed tolerance from the final dataset
-#write_xlsx(data_agg, 'aggregated_trains_by_year_nostrike.xlsx')
+#write_xlsx(data_agg, 'aggregated_trains_by_year_nostrike_0402.xlsx')
 
