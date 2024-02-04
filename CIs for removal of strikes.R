@@ -86,7 +86,7 @@ for(b in 1:B){
   T.boot[b]  = median(sample(sample1, replace = T))
 }
 alpha = 0.05
-k=11
+k=47
 right.quantile = quantile(T.boot, 1-alpha/(2*k))
 left.quantile = quantile(T.boot, alpha/(2*k))
 CI_18[month,] = c(T.obs - (right.quantile- T.obs), T.obs - (left.quantile-T.obs)) 
@@ -100,7 +100,7 @@ points(1:11, CI_18[,2])
 segments(1:11,CI_18[,1], 1:11,CI_18[,2], col='red3')
 
 x11()
-plot(c(1,2,8,9,10,11), CI_18[c(1,2,8,9,10,11),1])
+plot(c(1,2,8,9,10,11), CI_18[c(1,2,8,9,10,11),1], ylim=range(CI_18[c(1,2,8,9,10,11),]))
 points(c(1,2,8,9,10,11), CI_18[c(1,2,8,9,10,11),2])
 segments(c(1,2,8,9,10,11),CI_18[c(1,2,8,9,10,11),1], c(1,2,8,9,10,11),CI_18[c(1,2,8,9,10,11),2], col='red3')
 
@@ -134,7 +134,7 @@ for(month in 1:12){
     T.boot[b]  = median(sample(sample1, replace = T))
   }
   alpha = 0.05
-  k=12
+  k=47
   right.quantile = quantile(T.boot, 1-alpha/(2*k))
   left.quantile = quantile(T.boot, alpha/(2*k))
   CI_17[month,] = c(T.obs - (right.quantile- T.obs), T.obs - (left.quantile-T.obs)) 
@@ -177,7 +177,7 @@ for(month in 1:12){
     T.boot[b]  = median(sample(sample1, replace = T))
   }
   alpha = 0.05
-  k=12
+  k=47
   right.quantile = quantile(T.boot, 1-alpha/(2*k))
   left.quantile = quantile(T.boot, alpha/(2*k))
   CI_16[month,] = c(T.obs - (right.quantile- T.obs), T.obs - (left.quantile-T.obs)) 
@@ -211,7 +211,7 @@ for(month in 1:12){
     T.boot[b]  = median(sample(sample1, replace = T))
   }
   alpha = 0.05
-  k=12
+  k=47
   right.quantile = quantile(T.boot, 1-alpha/(2*k))
   left.quantile = quantile(T.boot, alpha/(2*k))
   CI_15[month,] = c(T.obs - (right.quantile- T.obs), T.obs - (left.quantile-T.obs)) 
