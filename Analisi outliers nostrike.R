@@ -20,7 +20,7 @@ library(insight)
 rm(list=ls())
 graphics.off()
 
-data = read_excel('aggregated_trains_by_year_nostrike.xlsx')
+data = read_excel('aggregated_trains_by_year_nostrike_0402.xlsx')
 
 n = dim(data)[1]
 
@@ -68,14 +68,14 @@ fit_MCD_2018$center
 ind_best_subset_2018 = fit_MCD_2018$best
 ind_best_subset_2018
 
-ind_out_MCD_2018 = setdiff(1:N,fit_MCD_2018$best)
+ind_out_MCD_2018 = (1:N)[which(fit_MCD_2018$mcd.wt==0)]
 ind_out_MCD_2018
 multiv_2018$route[ind_out_MCD_2018]
 
 x11()
-plot(canc_perc[i_2018], extreme_delay[i_2018], col=ifelse(1:N%in%ind_best_subset_2018,"black","red"),pch=16,
+plot(canc_perc[i_2018], extreme_delay[i_2018], col=ifelse(1:N%in%ind_out_MCD_2018,'red',"black"),pch=16,
      xlim=x_lim, ylim=y_lim)
-text(canc_perc[i_2018], extreme_delay[i_2018], label=1:N)
+text(multiv_2018$cancelled_percentage[ind_out_MCD_2018], multiv_2018$extreme_delay[ind_out_MCD_2018], label=multiv_2018$route[ind_out_MCD_2018])
 
 # In particular, Paris Lyon - Perpignan (A/R) is the worst outlier (index 31, 36)
 # Montpellier Lyon (22, 74) high cancellations
@@ -92,13 +92,13 @@ fit_MCD_2017$center
 ind_best_subset_2017 = fit_MCD_2017$best
 ind_best_subset_2017
 
-ind_out_MCD_2017 = setdiff(1:N,fit_MCD_2017$best)
+ind_out_MCD_2017 = (1:N)[which(fit_MCD_2017$mcd.wt==0)]
 ind_out_MCD_2017
 multiv_2017$route[ind_out_MCD_2017]
 
 
 x11()
-plot(canc_perc[i_2017], extreme_delay[i_2017], col=ifelse(1:n%in%ind_best_subset_2017,"black","red"),pch=16,
+plot(canc_perc[i_2017], extreme_delay[i_2017], col=ifelse(1:n%in%ind_out_MCD_2017,'red',"black"),pch=16,
      xlim=x_lim, ylim=y_lim)
 text(canc_perc[i_2017], extreme_delay[i_2017], label=1:N)
 
@@ -121,13 +121,13 @@ fit_MCD_2016$center
 ind_best_subset_2016 = fit_MCD_2016$best
 ind_best_subset_2016
 
-ind_out_MCD_2016 = setdiff(1:N,fit_MCD_2016$best)
+ind_out_MCD_2016 = (1:N)[which(fit_MCD_2016$mcd.wt==0)]
 ind_out_MCD_2016
 multiv_2016$route[ind_out_MCD_2016]
 
 
 x11()
-plot(canc_perc[i_2016], extreme_delay[i_2016], col=ifelse(1:n%in%ind_best_subset_2016,"black","red"),pch=16,
+plot(canc_perc[i_2016], extreme_delay[i_2016], col=ifelse(1:n%in%ind_out_MCD_2016,'red',"black"),pch=16,
      xlim=x_lim, ylim=y_lim)
 text(canc_perc[i_2016], extreme_delay[i_2016], label=1:N)
 
@@ -147,13 +147,13 @@ fit_MCD_2015$center
 ind_best_subset_2015 = fit_MCD_2015$best
 ind_best_subset_2015
 
-ind_out_MCD_2015 = setdiff(1:N,fit_MCD_2015$best)
+ind_out_MCD_2015 = (1:N)[which(fit_MCD_2015$mcd.wt==0)]
 ind_out_MCD_2015
 multiv_2015$route[ind_out_MCD_2015]
 
 
 x11()
-plot(canc_perc[i_2015], extreme_delay[i_2015], col=ifelse(1:n%in%ind_best_subset_2015,"black","red"),pch=16,
+plot(canc_perc[i_2015], extreme_delay[i_2015], col=ifelse(1:n%in%ind_out_MCD_2015,'red',"black"),pch=16,
      xlim=x_lim, ylim=y_lim)
 text(canc_perc[i_2015], extreme_delay[i_2015], label=1:N)
 
@@ -201,4 +201,4 @@ for(i in 1:108){
 data_outlier=data.frame(data_outlier)
 colnames(data_outlier)=c("Route", 2015, 2016,2017,2018, "Dep", "Arr")
 route_outlier=data_outlier[-which(data_outlier$'2015'==0 & data_outlier$'2016'==0 & data_outlier$'2017'==0 & data_outlier$'2018'==0),]
-railway_outlier = route_outlier[which(route_outlier$Dep %in%route_outlier$Arr & route_outlier$Arr %in% route_outlier$Dep),]
+#railway_outlier = route_outlier[which(route_outlier$Dep %in%route_outlier$Arr & route_outlier$Arr %in% route_outlier$Dep),]
