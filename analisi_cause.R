@@ -241,3 +241,28 @@ summary(model_no_strike)
 
 finestra_grafica(t)
 plot(model_no_strike)
+
+
+
+################################
+##### ROBUST BIVARIATE #########
+################################
+Rail_infrastructure = data.frame(data_no_strike$avg_delay_late_on_arrival[i_2018],
+                                 data_no_strike$delay_cause_rail_infrastructure[i_2018])
+colnames(Rail_infrastructure)=c('Avg delay late on arrival','Rail infrastructure')
+Traffic_management = data.frame(data_no_strike$avg_delay_late_on_arrival[i_2018],
+                                 data_no_strike$delay_cause_traffic_management[i_2018])
+colnames(Traffic_management)=c('Avg delay late on arrival','Traffic management')
+Rolling_stock = data.frame(data_no_strike$avg_delay_late_on_arrival[i_2018],
+                                 data_no_strike$delay_cause_rolling_stock[i_2018])
+colnames(Rolling_stock)=c('Avg delay late on arrival','Rolling stock')
+Station_management = data.frame(data_no_strike$avg_delay_late_on_arrival[i_2018],
+                                 data_no_strike$delay_cause_station_management[i_2018])
+colnames(Station_management)=c('Avg delay late on arrival','Station management')
+Externals = data.frame(data_no_strike$avg_delay_late_on_arrival[i_2018],
+                                 data_no_strike$delay_cause_external_cause[i_2018]+data_no_strike$delay_cause_travelers[i_2018])
+colnames(Externals)=c('Avg delay late on arrival','Externals')
+
+
+#rail infrastructure
+fit_MCD_rail_inf <- covMcd(x = Rail_infrastructure, alpha = .75, nsamp = "best") 
