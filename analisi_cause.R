@@ -31,8 +31,6 @@ n = dim(data)[1]
 i_2018=which(data$year==2018)
 
 
-
-
 #prendo le cause del 2018: vengono divise in quali sono interne e quali esterne, è questa distinzione che ci interessa
 cause_2018=data.frame(data$delay_cause_rail_infrastructure[i_2018],
                       data$delay_cause_traffic_management[i_2018],
@@ -84,8 +82,6 @@ x4 = cause_2018_transformed[,4] #(sqrt(4/5))*log(radice4(rail_infrastructure*tra
 #biplot(pc)  
 
 
- 
-
 #RESPONSE
 response = data$avg_delay_late_on_arrival[i_2018]
 
@@ -96,7 +92,7 @@ summary(fit)
 shapiro.test(fit$residuals)
 #gaussian residuals
 
-vif(fit_2)
+vif(fit)
 #no problem of collinearity
 
 #I reduce: exact test
@@ -164,9 +160,84 @@ plot(model)
 
 
 #no scioperi
-data = read_excel('aggregated_trains_by_year_nostrike_0402.xlsx')
+data_no_strike = read_excel('aggregated_trains_by_year_nostrike_0402.xlsx')
+
+cause_2018_no_strike=data.frame(data_no_strike$delay_cause_rail_infrastructure[i_2018],
+                                data_no_strike$delay_cause_traffic_management[i_2018],
+                                data_no_strike$delay_cause_rolling_stock[i_2018],
+                                data_no_strike$delay_cause_station_management[i_2018],
+                                data_no_strike$delay_cause_external_cause[i_2018]+data_no_strike$delay_cause_travelers[i_2018])
+
+colnames(cause_2018_no_strike)=nomi_cause
+n_2018_no_strike = dim(cause_2018_no_strike)[1]
+
+cause_2018_comp_no_strike=acomp(cause_2018_no_strike) 
+
+finestra_grafica(t)
+plot(cause_2018_comp_no_strike)     
 
 
+#Trasformazione: isometric log ratio transformation: data are mapped from S^5 to R^4
+cause_2018__no_strike_transformed=(-1)*ilr(cause_2018_no_strike) 
 
+x1_no_strike = cause_2018__no_strike_transformed[,1] 
+x2_no_strike = cause_2018__no_strike_transformed[,2] 
+x3_no_strike = cause_2018__no_strike_transformed[,3] 
+x4_no_strike = cause_2018__no_strike_transformed[,4]
+#stesse identiche interpretazioni di prima
 
+#RESPONSE
+response_no_strike = data_no_strike$avg_delay_late_on_arrival[i_2018]
 
+#firstly, I try with a simple linear model
+fit_no_strike = lm( response_no_strike ~ x1_no_strike + x2_no_strike + x3_no_strike + x4_no_strike)
+summary(fit_no_strike)
+# R^2 of 0.1971
+shapiro.test(fit_no_strike$residuals)
+#gaussian residuals
+
+vif(fit_no_strike)
+#no problem of collinearity
+
+#I reduce: exact test
+
+fit_red_no_strike = lm( response_no_strike ~ x1_no_strike + x3_no_strike + x4_no_strike)
+summary(fit_red_no_strike)
+shapiro.test(fit_red_no_strike$residuals)
+#best linear model that I can have: R^2=0.1915: not a lot
+
+#ora provo a fare un gam, per 
+model_gam_no_strike=gam(response_no_strike ~ s(x1_no_strike,bs='cr') + 
+                                   s(x2_no_strike,bs='cr') + 
+                                   s(x3_no_strike,bs='cr') + 
+                                   s(x4_no_strike,bs='cr') )
+summary(model_gam_no_strike)
+#it seems to explaining it better: R2=0.219
+shapiro.test(model_gam_no_strike$residuals)
+#I have gaussianity
+
+#firstly, I try to do it semiparametric since I have some terms that appears to be linear
+
+model_semiparam_no_strike = gam(response_no_strike ~ x1_no_strike + x2_no_strike + s(x3_no_strike,bs='cr') + s(x4_no_strike,bs='cr') )
+summary(model_semiparam_no_strike)
+#R2=0.219
+
+#I can also reduce my model
+model_gam_red_no_strike = gam(response_no_strike ~ s(x3_no_strike,bs='cr') + s(x4_no_strike,bs='cr'))
+summary(model_gam_red_no_strike)
+
+anova(model_gam_red_no_strike,model_gam_no_strike, test = "F") 
+#pvalue of 0.1751: I can take the simplest one: can I put the last term linear?
+model_gam_red_2_no_strike = gam(response_no_strike ~ x3_no_strike + s(x4_no_strike,bs='cr'))
+summary(model_gam_red_2_no_strike)
+
+anova(model_gam_red_no_strike,model_gam_red_2_no_strike, test = "F") 
+#I can accept H0, since the pvalue is 0.2194
+
+#Model for no_strike: R2=0.199
+model_no_strike = model_gam_red_2_no_strike
+summary(model_no_strike)
+# y = x3 + f4(x4) + eps
+
+finestra_grafica(t)
+plot(model_no_strike)
