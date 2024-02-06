@@ -437,3 +437,21 @@ Externals[ind_out_ex,]
 #dalla nuvola di punti sono quelli che hanno una proporzione un po' maggiore di 0.3
 
 summary(ltsReg(Externals$`Avg delay late on arrival`~Externals$Externals, alpha=.75,mcd=TRUE)) #R2=0.07699
+
+#Che tratte?
+data_no_strike_2018 = data_no_strike[i_2018,]
+#Outliers rail infrastructures
+ind_out_rail_inf
+data_no_strike_2018[ind_out_rail_inf,]$route
+#Outliers traffic management
+ind_out_traf_man
+data_no_strike_2018[ind_out_traf_man,]$route
+#Outliers rolling stock
+ind_out_rol_sto
+data_no_strike_2018[ind_out_rol_sto,]$route #interessante: molte tratte che partono da Parigi ne risentono
+#Outliers station management
+ind_out_stat_man
+data_no_strike_2018[ind_out_stat_man,]$route
+#Outliers externals
+ind_out_ex
+data_no_strike_2018[ind_out_ex,]$route
