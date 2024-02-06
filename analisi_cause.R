@@ -247,6 +247,9 @@ plot(model_no_strike)
 ################################
 ##### ROBUST BIVARIATE #########
 ################################
+#NB: ho provato a fare nuovamente regressione 1vs1: è una cosa insensata, i modelli che appaiono sono tutti in funzione solo
+#dell'interecetta: avevo iniziato scrivendo il primo, ma poi vedendo i dati verrebbero tutti così. Tra l'altro R2 sotto allo 0.1,
+#non lo ritengo sensato
 Rail_infrastructure = data.frame(data_no_strike$avg_delay_late_on_arrival[i_2018],
                                  data_no_strike$delay_cause_rail_infrastructure[i_2018])
 colnames(Rail_infrastructure)=c('Avg delay late on arrival','Rail infrastructure')
@@ -262,7 +265,145 @@ colnames(Station_management)=c('Avg delay late on arrival','Station management')
 Externals = data.frame(data_no_strike$avg_delay_late_on_arrival[i_2018],
                                  data_no_strike$delay_cause_external_cause[i_2018]+data_no_strike$delay_cause_travelers[i_2018])
 colnames(Externals)=c('Avg delay late on arrival','Externals')
+p=2
 
 
 #rail infrastructure
-fit_MCD_rail_inf <- covMcd(x = Rail_infrastructure, alpha = .75, nsamp = "best") 
+#firstly, I visualize the data
+finestra_grafica(t)
+plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`)
+#robust bivariate
+MCD_rail_inf <- covMcd(x = Rail_infrastructure, alpha = .75, nsamp = "best") 
+ind_obs_rail_inf <-
+  which(
+    mahalanobis(
+      x = Rail_infrastructure,
+      center = MCD_rail_inf$raw.center,
+      cov = MCD_rail_inf$raw.cov
+    ) <= qchisq(p = .975, df = p) #p=number of covariates
+  )
+ind_out_rail_inf = setdiff(1:n_2018_no_strike,ind_obs_rail_inf)
+
+finestra_grafica(t)
+plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rail infrastructure',xlab='Due to rail infrastructure',ylab='Avg delay late on arrival')
+points(Rail_infrastructure$`Rail infrastructure`[ind_out_rail_inf],Rail_infrastructure$`Avg delay late on arrival`[ind_out_rail_inf],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
+ind_out_rail_inf
+Rail_infrastructure[ind_out_rail_inf,]
+#tratta 51 non la considererei tanto un outlier 'dannoso': anz, è un po' particolare perchè nonostante risenta così
+#tanto di questa causa, il ritardo medio in quella tratta è basso
+summary(ltsReg(Rail_infrastructure$`Avg delay late on arrival`~Rail_infrastructure$`Rail infrastructure`, alpha=.75,mcd=TRUE)) #R2=0.05497
+
+
+
+#traffic management
+#firstly, I visualize the data
+finestra_grafica(t)
+plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`)
+#robust bivariate
+MCD_traf_man <- covMcd(x = Traffic_management, alpha = .75, nsamp = "best") 
+ind_obs_traf_man <-
+  which(
+    mahalanobis(
+      x = Traffic_management,
+      center = MCD_traf_man$raw.center,
+      cov = MCD_traf_man$raw.cov
+    ) <= qchisq(p = .975, df = p) #p=number of covariates
+  )
+ind_out_traf_man= setdiff(1:n_2018_no_strike,ind_obs_traf_man)
+
+finestra_grafica(t)
+plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to traffic management',xlab='Due to traffic management',ylab='Avg delay late on arrival')
+points(Traffic_management$`Traffic management`[ind_out_traf_man],Traffic_management$`Avg delay late on arrival`[ind_out_traf_man],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
+ind_out_traf_man
+Traffic_management[ind_out_traf_man,]
+#in questo caso, si può imputare alla tratta 33 il fatto di avere un ritardo elevato per questo motivo: onestamente non saprei
+#direi più che vi sia sia un ritardo alto che una proporzione alta
+
+summary(ltsReg(Traffic_management$`Avg delay late on arrival`~Traffic_management$`Traffic management`, alpha=.75,mcd=TRUE)) #R2=0.07599
+
+
+
+#rolling stock
+#firstly, I visualize the data
+finestra_grafica(t)
+plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`)
+#robust bivariate
+MCD_rol_sto <- covMcd(x = Rolling_stock, alpha = .75, nsamp = "best") 
+ind_obs_rol_stock <-
+  which(
+    mahalanobis(
+      x = Rolling_stock,
+      center = MCD_rol_sto$raw.center,
+      cov = MCD_rol_sto$raw.cov
+    ) <= qchisq(p = .975, df = p) #p=number of covariates
+  )
+ind_out_rol_sto = setdiff(1:n_2018_no_strike,ind_obs_rol_stock)
+
+finestra_grafica(t)
+plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rolling stock',xlab='Due to rolling stock',ylab='Avg delay late on arrival')
+points(Rolling_stock$`Rolling stock`[ind_out_rol_sto],Rolling_stock$`Avg delay late on arrival`[ind_out_rol_sto],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
+ind_out_rol_sto
+Rolling_stock[ind_out_rol_sto,]
+#in questo caso non sembra esserci una relazione tra alta proporzione e alto ritardo: i punti effettivamente fuori
+#dalla nuvola di punti sono quelli che hanno una proporzione un po' maggiore di 0.3
+
+summary(ltsReg(Rolling_stock$`Avg delay late on arrival`~Rolling_stock$`Rolling stock`, alpha=.75,mcd=TRUE)) #R2=0.000431
+
+
+#Station_management
+#firstly, I visualize the data
+finestra_grafica(t)
+plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`)
+#robust bivariate
+MCD_stat_man <- covMcd(x = Station_management, alpha = .75, nsamp = "best") 
+ind_obs_stat_man <-
+  which(
+    mahalanobis(
+      x = Station_management,
+      center = MCD_stat_man$raw.center,
+      cov = MCD_stat_man$raw.cov
+    ) <= qchisq(p = .975, df = p) #p=number of covariates
+  )
+ind_out_stat_man = setdiff(1:n_2018_no_strike,ind_obs_stat_man)
+
+finestra_grafica(t)
+plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to station management',xlab='Due to station management',ylab='Avg delay late on arrival')
+points(Station_management$`Station management`[ind_out_stat_man],Station_management$`Avg delay late on arrival`[ind_out_stat_man],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
+ind_out_stat_man
+Station_management[ind_out_stat_man,]
+#in questo caso non sembra esserci una relazione tra alta proporzione e alto ritardo: i punti effettivamente fuori
+#dalla nuvola di punti sono quelli che hanno una proporzione un po' maggiore di 0.3
+
+summary(ltsReg(Station_management$`Avg delay late on arrival`~Station_management$`Station management`, alpha=.75,mcd=TRUE)) #R2=0.1624
+
+
+#EXTERNALS
+#firstly, I visualize the data
+finestra_grafica(t)
+plot(Externals$Externals,Externals$`Avg delay late on arrival`)
+#robust bivariate
+MCD_ex <- covMcd(x = Externals, alpha = .75, nsamp = "best") 
+ind_obs_ex <-
+  which(
+    mahalanobis(
+      x = Externals,
+      center = MCD_ex$raw.center,
+      cov = MCD_ex$raw.cov
+    ) <= qchisq(p = .975, df = p) #p=number of covariates
+  )
+ind_out_ex = setdiff(1:n_2018_no_strike,ind_obs_ex)
+
+finestra_grafica(t)
+plot(Externals$Externals,Externals$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to external causes',xlab='Due to external causes',ylab='Avg delay late on arrival')
+points(Externals$Externals[ind_out_ex],Externals$`Avg delay late on arrival`[ind_out_ex],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
+ind_out_ex
+Externals[ind_out_ex,]
+#in questo caso non sembra esserci una relazione tra alta proporzione e alto ritardo: i punti effettivamente fuori
+#dalla nuvola di punti sono quelli che hanno una proporzione un po' maggiore di 0.3
+
+summary(ltsReg(Externals$`Avg delay late on arrival`~Externals$Externals, alpha=.75,mcd=TRUE)) #R2=0.07699
