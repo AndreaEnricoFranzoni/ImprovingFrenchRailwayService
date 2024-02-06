@@ -274,6 +274,13 @@ finestra_grafica(t)
 plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`)
 #robust bivariate
 MCD_rail_inf <- covMcd(x = Rail_infrastructure, alpha = .75, nsamp = "best") 
+finestra_grafica(t)
+plot(MCD_rail_inf,classic=TRUE)
+#trovo gli outliers
+ind_out_rail_inf <- (1:n_2018_no_strike)[MCD_rail_inf$mcd.wt==0]  #51
+
+##metodo alternativo da non usare
+ind_out_rail_inf <- (1:n_2018_no_strike)[MCD_rail_inf$mcd.wt==0]  #51
 ind_obs_rail_inf <-
   which(
     mahalanobis(
@@ -282,7 +289,8 @@ ind_obs_rail_inf <-
       cov = MCD_rail_inf$raw.cov
     ) <= qchisq(p = .975, df = p) #p=number of covariates
   )
-ind_out_rail_inf = setdiff(1:n_2018_no_strike,ind_obs_rail_inf)
+ind_out_rail_inf = setdiff(1:n_2018_no_strike,ind_obs_rail_inf)  #30  51 103
+
 
 finestra_grafica(t)
 plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rail infrastructure',xlab='Due to rail infrastructure',ylab='Avg delay late on arrival')
@@ -301,7 +309,12 @@ summary(ltsReg(Rail_infrastructure$`Avg delay late on arrival`~Rail_infrastructu
 finestra_grafica(t)
 plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`)
 #robust bivariate
-MCD_traf_man <- covMcd(x = Traffic_management, alpha = .75, nsamp = "best") 
+MCD_traf_man <- covMcd(x = Traffic_management, alpha = .5, nsamp = "best") 
+finestra_grafica(t)
+plot(MCD_traf_man,classic=TRUE)
+ind_out_traf_man <- (1:n_2018_no_strike)[MCD_traf_man$mcd.wt==0] #33 39
+
+##
 ind_obs_traf_man <-
   which(
     mahalanobis(
@@ -310,7 +323,8 @@ ind_obs_traf_man <-
       cov = MCD_traf_man$raw.cov
     ) <= qchisq(p = .975, df = p) #p=number of covariates
   )
-ind_out_traf_man= setdiff(1:n_2018_no_strike,ind_obs_traf_man)
+ind_out_traf_man= setdiff(1:n_2018_no_strike,ind_obs_traf_man) #33 39 77 87
+
 
 finestra_grafica(t)
 plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to traffic management',xlab='Due to traffic management',ylab='Avg delay late on arrival')
@@ -331,6 +345,11 @@ finestra_grafica(t)
 plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`)
 #robust bivariate
 MCD_rol_sto <- covMcd(x = Rolling_stock, alpha = .75, nsamp = "best") 
+finestra_grafica(t)
+plot(MCD_rol_sto,classic=TRUE)
+ind_out_rol_sto <- (1:n_2018_no_strike)[MCD_rol_sto$mcd.wt==0] #3 14 19 26 28 44 54 74 75 76 88 89
+
+##
 ind_obs_rol_stock <-
   which(
     mahalanobis(
@@ -339,7 +358,7 @@ ind_obs_rol_stock <-
       cov = MCD_rol_sto$raw.cov
     ) <= qchisq(p = .975, df = p) #p=number of covariates
   )
-ind_out_rol_sto = setdiff(1:n_2018_no_strike,ind_obs_rol_stock)
+ind_out_rol_sto = setdiff(1:n_2018_no_strike,ind_obs_rol_stock) #13  14  19  26  28  44  54  63  74  75  76  88  89 101
 
 finestra_grafica(t)
 plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rolling stock',xlab='Due to rolling stock',ylab='Avg delay late on arrival')
@@ -359,6 +378,11 @@ finestra_grafica(t)
 plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`)
 #robust bivariate
 MCD_stat_man <- covMcd(x = Station_management, alpha = .75, nsamp = "best") 
+finestra_grafica(t)
+plot(MCD_stat_man,classic=TRUE)
+ind_out_stat_man <- (1:n_2018_no_strike)[MCD_stat_man$mcd.wt==0] #23 54 92
+
+##
 ind_obs_stat_man <-
   which(
     mahalanobis(
@@ -367,7 +391,7 @@ ind_obs_stat_man <-
       cov = MCD_stat_man$raw.cov
     ) <= qchisq(p = .975, df = p) #p=number of covariates
   )
-ind_out_stat_man = setdiff(1:n_2018_no_strike,ind_obs_stat_man)
+ind_out_stat_man = setdiff(1:n_2018_no_strike,ind_obs_stat_man) #23  54  92  94 105
 
 finestra_grafica(t)
 plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to station management',xlab='Due to station management',ylab='Avg delay late on arrival')
@@ -386,7 +410,13 @@ summary(ltsReg(Station_management$`Avg delay late on arrival`~Station_management
 finestra_grafica(t)
 plot(Externals$Externals,Externals$`Avg delay late on arrival`)
 #robust bivariate
-MCD_ex <- covMcd(x = Externals, alpha = .75, nsamp = "best") 
+MCD_ex <- covMcd(x= Externals, alpha = .5, nsamp = "best") 
+#MCD_ex <- covMcd(x= Externals, alpha = .75, nsamp = "best") 
+finestra_grafica(t)
+plot(MCD_ex,classic=TRUE)
+ind_out_ex <- (1:n_2018_no_strike)[MCD_ex$mcd.wt==0] # 0.5: 27 38 48 52 98                     0.75: nulla
+
+##
 ind_obs_ex <-
   which(
     mahalanobis(
@@ -395,7 +425,7 @@ ind_obs_ex <-
       cov = MCD_ex$raw.cov
     ) <= qchisq(p = .975, df = p) #p=number of covariates
   )
-ind_out_ex = setdiff(1:n_2018_no_strike,ind_obs_ex)
+ind_out_ex = setdiff(1:n_2018_no_strike,ind_obs_ex) # 0.5: 27 37 38 48 52 61 76 89 97 98       0.75: 48
 
 finestra_grafica(t)
 plot(Externals$Externals,Externals$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to external causes',xlab='Due to external causes',ylab='Avg delay late on arrival')
