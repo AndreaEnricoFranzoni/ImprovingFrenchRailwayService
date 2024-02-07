@@ -60,10 +60,17 @@ x3 = cause_2018_transformed[,3] #(sqrt(3/4))*log(radice3(rail_infrastructure*tra
 x4 = cause_2018_transformed[,4] #(sqrt(4/5))*log(radice4(rail_infrastructure*traffic_management*rolling_stock*station_management)/externals)
 
 #interpretazione:
-# x1: quanto rail_inf sia maggiore di traffic_management
-# x2: quanto l'interazione tra rail_infrastructure e traffic_management sia maggiore di rolling stock
+# x1: quanto l'effetto di rail_inf sia maggiore di traffic_management
+# x2: la radice quadrata dell'interazione tra rail_infrastructure e traffic_management sia maggiore di rolling stock
+#     se non ci fosse la radice, sarebbe il rapporto dell'interazione tra rail_infrastructure e traffic_management su rolling stock:
+#     il logaritmo è monotona, quindi tanto più l'interazione è grande, tanto più il log è grande.
+#     ma anche la radice è monotona: qui di x2 esprime quanto l'interazione fra rail_infrastructure e traffic_management sia
+#     maggiore di rolling stock. Lo stesso identico ragionamento si applica per x3 e x4: l'unico problema è che, inserendo 
+#     una radice di ordine sempre maggiore, cambia l'ordine di grandezza
 # x3: quanto l'interazione tra rail_infrastructure e traffic_management e rolling stock sia maggiore di station_management
 # x4: quanto l'interazione tra le cause interne sia maggiore di quelle esterne
+#
+# Essenzialamente, più la covariata è grande, più l'interazione a denominatore è maggiore dell'effetto del denominatore
 
 
 ###########
@@ -154,8 +161,7 @@ plot(model)
 #f3(x3): dimostra come station management sia la causa più importante di tutte per un incremento del ritardo medio: il picco è circa 10, ma assume
 #        valori positivi soprattutto dove il denominatore è maggiore del numeratore
 #f4(x4): più x4 aumenta, più diminuisce: aumenta tanto più l'interazione tra interne diventa piccola rispetto a quelle esterne
-
-
+#interpretazione molto a grandi linee, non l'ho approfondita volutamente siccome abbiamo deciso di usare il senza scioperi
 
 
 
@@ -237,10 +243,43 @@ anova(model_gam_red_no_strike,model_gam_red_2_no_strike, test = "F")
 #Model for no_strike: R2=0.199
 model_no_strike = model_gam_red_2_no_strike
 summary(model_no_strike)
-# y = x3 + f4(x4) + eps
 
+# Best model found:
+# y = x3 + f4(x4) + eps
+#
+#Interpretazione: 
+# x1: rail_inf/traffic_man: non c'è
+# x2: rail_inf*traffic_man/rolling_stock: non c'è
+# x3: rail_inf*traffic_man*rolling_stock/station_man: è lineare con coefficiente positivo
+# x4: interazione_interne/esterne: funzione non lineare
+
+# effect of x3
+min(x3_no_strike)
+max(x3_no_strike)
+sequence_x3_no_strike = seq(min(x3_no_strike),max(x3_no_strike),by=0.001)
 finestra_grafica(t)
-plot(model_no_strike)
+plot(sequence_x3_no_strike,model_no_strike$coefficients[1] + sequence_x3_no_strike*model_no_strike$coefficients[2],
+     xlab='x3',ylab='b1 + b2*x3',main='Average delay late on arrival vs x3')
+#all'aumentare dell'interazione fra rail_inf*traffic_man*rolling_stock rispetto che station_manag, aumenta la media
+#del ritardo medio: la magnitudo è notevole, a livello di quanto aumenti in effetti il ritardo
+
+#effect of x4
+finestra_grafica(t)
+plot(model_no_strike,xlab='x4',ylab='f4(x4)',main='Average delay late on arrival vs x4')
+# cresce se x4 <-1 o se x4 > -0.5: questo significa che se c'è un grande sbilanciamento di fattori: 
+# il ritardo medio aumenta , e anche velocemente, se cè il rapporto è minore di 0.3
+# il ritardo aumenta anche se il rapporto radice_4(cause_int_int)/cause_ext è circa maggiore di 0.6(1/radice(e))
+# cosa significa: lo sbilanciamento tra l'avere un maggior effetto (su cui non ci si può fare nulla) di cause esterne
+# o l'avere una grande interazione di cause interne(su cui si può lavorare) aumenta il ritardo
+
+# Unendo i due casi, sicuramente il termine relativo a x3 ha una magnitudo maggiore sul ritardo medio:
+# potremmo interpretare il termine relativo a x4 come un termine che indica il giusto bilanciamento di cause:
+# la radice_4(interazione_interne)/esterne deve essere circa 0.4: quindi le esterne devono avere un maggior impatto:
+# essenzialmente, sta dicendo una cosa ovvia, ovvero che le cause interne debbano essere tenute separate tra di loro,
+# in maniera tale da potervi intervenire indipendentemente (a numeratore abbiamo un'interazione)
+# Il termine relativo a x3, di contro, mostra come l'introduzione di rolling stock al numeratore sia il maggior
+# 'fattore di rischio': è ciò su cui bisogna lavorare
+
 
 
 
@@ -405,7 +444,7 @@ Station_management[ind_out_stat_man,]
 summary(ltsReg(Station_management$`Avg delay late on arrival`~Station_management$`Station management`, alpha=.75,mcd=TRUE)) #R2=0.1624
 
 
-#EXTERNALS
+#EXTERNALS: NB: HO USATO ALHPA = 0.75: VEDETE QUALE PREFERITE TRA ESSO E 0.5
 #firstly, I visualize the data
 finestra_grafica(t)
 plot(Externals$Externals,Externals$`Avg delay late on arrival`)
@@ -455,3 +494,9 @@ data_no_strike_2018[ind_out_stat_man,]$route
 #Outliers externals
 ind_out_ex
 data_no_strike_2018[ind_out_ex,]$route
+
+#each route that is an outlier her has a station in Paris
+#for the internal causes, the outliers are the ones that have an extreme value for the cause, not for a relation with 
+# the response
+# It changes for external causes, but we know that they have a different behaviour and that we cannot do much
+# so it does not make sense to explore them
