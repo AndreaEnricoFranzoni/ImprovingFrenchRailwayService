@@ -246,6 +246,8 @@ summary(model_no_strike)
 
 # Best model found:
 # y = x3 + f4(x4) + eps
+shapiro.test(model_no_strike$residuals)     #pvalue: 0.05745: I can assume them gaussian
+anova(gam(response_no_strike~1),model_no_strike,test="F") #pvalue: 6.353e-05: I reject H0: the model is significative: it is an exact test
 #
 #Interpretazione: 
 # x1: rail_inf/traffic_man: non c'è
