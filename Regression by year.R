@@ -247,10 +247,13 @@ CI
 
 initial_model = lm(avg_delay_arr ~ avg_delay_dep:year + avg_journey:year + year)
 summary(initial_model)
-
+shapiro.test(initial_model$residuals)
 x11()
 par(mfrow=c(2,2))
-plot(initial_model)
+x11()
+par(mfrow=c(1,2))
+plot(initial_model, which=1)
+plot(initial_model, which=2)
 
 vif(initial_model)
 #### LMM ####
