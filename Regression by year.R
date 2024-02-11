@@ -48,9 +48,15 @@ avg_journey = data$journey_time_avg
 num_trips=data$total_num_trips
 year = as.factor(data$year)
 perc_canc = data$num_of_canceled_trains/data$total_num_trips
+
+x11()
+boxplot(avg_delay_arr~year, col=unique(col_years), xlab = 'Year', ylab = 'Average delay at arrival',
+        cex.lab = 1.2, cex.axis=1.2)
+
 #### Exploratory plots ####
 x11()
-plot(data$avg_delay_all_departing, data$avg_delay_all_arriving, col=col_years, pch=16)
+plot(data$avg_delay_all_departing, data$avg_delay_all_arriving, col=col_years, pch=16,
+     xlab='Average delay at departure', ylab='Average delay at arrival')
 legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=.7)
 x11()
 plot(data$journey_time_avg, data$avg_delay_all_arriving, col=col_years, pch=16)
@@ -202,7 +208,7 @@ x11()
 plot(rep(1,length(variable[i_2015])), variable[i_2015], 
      xlim=c(0.5,4.5), ylim=c(min(variable),max(variable)),
      xlab="Year", ylab=var_name, xaxt='n',
-     main="Bootstrap 95% CI for the mean", col=unique(col_years)[1])
+     col=unique(col_years)[1], cex.lab=1.2)
 points(rep(2,length(variable[i_2016])), variable[i_2016], col=unique(col_years)[2])
 points(rep(3,length(variable[i_2017])), variable[i_2017], col=unique(col_years)[3])
 points(rep(4,length(variable[i_2018])), variable[i_2018], col=unique(col_years)[4])
@@ -233,6 +239,7 @@ return(CI_avg_delay_arr)
 }
 # From these intervals, we can understand that the factor 'year' may be relevant
 # in building a regression model for the average delay at arrival
+set.seed(2024)
 CI = BootstrapCI(variable, alpha, B, indexes, 'Mean average delay at arrival (min)')
 CI
 #### Parametric model ####

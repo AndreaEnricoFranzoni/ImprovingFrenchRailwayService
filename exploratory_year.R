@@ -31,12 +31,22 @@ col_years[i_2018] = 'purple'
 
 # per ora consideriamo questa
 x11()
-par(mfrow=c(1,2))
-plot(data$avg_delay_all_departing, data$avg_delay_all_arriving, col=col_years, pch=16)
-legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=.7)
+plot(data$avg_delay_all_departing, data$avg_delay_all_arriving, col=col_years, pch=16,
+     xlab = 'Average delay at departure', ylab = 'Average delay at arrival', cex.axis = 1.2,
+     cex.lab=1.2)
+legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=1.0)
 abline(a=0, b=1, col='cyan')
-plot(data$journey_time_avg, data$avg_delay_all_arriving, col=col_years, pch=16)
-legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=.7)
+x11()
+plot(data$journey_time_avg, data$avg_delay_all_arriving, col=col_years, pch=16,
+     xlab = 'Average journey time', ylab = 'Average delay at arrival', cex.axis = 1.2,
+     cex.lab=1.2)
+legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=1.0)
+
+x11()
+plot(data$total_num_trips, data$avg_delay_all_arriving, col=col_years, pch=16,
+     xlab = 'Total number of trips', ylab = 'Average delay at arrival', cex.axis = 1.2,
+     cex.lab=1.2)
+legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=1.0)
 
 avg_delay_arr = data$avg_delay_all_arriving
 avg_delay_dep = data$avg_delay_all_departing
@@ -54,12 +64,12 @@ plot(model_param)
 
 shapiro.test(model_param$residuals)
 
-model_param_int = lm(avg_delay_arr ~ avg_delay_dep:year + avg_journey:year + num_trips)
+model_param_int = lm(avg_delay_arr ~ avg_delay_dep:year + avg_journey:year + year)
 summary(model_param_int)
 
 x11()
 par(mfrow=c(2,2))
-plot(model_param)
+plot(model_param_int)
 
 shapiro.test(model_param$residuals)
 
