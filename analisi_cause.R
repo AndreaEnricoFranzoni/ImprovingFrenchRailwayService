@@ -226,6 +226,7 @@ shapiro.test(model_gam_no_strike$residuals)
 
 model_semiparam_no_strike = gam(response_no_strike ~ x1_no_strike + x2_no_strike + s(x3_no_strike,bs='cr') + s(x4_no_strike,bs='cr') )
 summary(model_semiparam_no_strike)
+shapiro.test(model_semiparam_no_strike$residuals)
 #R2=0.219
 
 #I can also reduce my model
