@@ -28,11 +28,8 @@ nas = unique(c(routes_missing_values,truncated_routes))                         
 
 data=data[-which(data$route%in%nas),]
 
-
 #### Dataset for a variable ####
-#variable=data$num_greater_30_min_late/data$total_num_trips # variabile di interesse
-
-variable=data$avg_delay_late_on_arrival
+variable=data$num_of_canceled_trains/data$total_num_trips # variabile di interesse
 
 years = unique(data$year)
 months = unique(data$month)
@@ -52,8 +49,11 @@ for (k in 1:num_tratte) {
 
 
 data_to_fd = data.frame(data_to_fd)
+# removing strikes
+data_to_fd = data_to_fd[,-c(15,16,18,39,40,41,42,43)]
+
 rownames(data_to_fd) = r
-colnames(data_to_fd) = 1:47
+colnames(data_to_fd) = 1:39
 
 # qua salvo le tratte con degli NA, ma probabilmente non serve
 na.indices = NULL
@@ -69,14 +69,11 @@ data_to_fd[na.indices,]
 data_to_fd = data_to_fd[-na.indices,]
 routes_no_na = r[-na.indices]
 
-#### Conversion to a functional dataset and outlier detection ####
-data_fd = fData(1:47, data_to_fd)
-
-
-median = median_fData(data_fd,type='MBD')
+#### Conversion to a functional dataset ####
+data_fd = fData(1:39, data_to_fd)
 x11()
 plot(data_fd)
-points(1:median$P, median$values, col='red3', type='l', lwd=2)
+
 
 
 x11()
@@ -116,34 +113,23 @@ outliers
 
 
 #### Create labels ####
-# departure station paris vs non paris
 paris_dep_routes = data$route[which(data$departure_station%in%c('PARIS EST', 'PARIS LYON',
                                                                 'PARIS MONTPARNASSE','PARIS NORD'))]
 paris_dep_routes = unique(paris_dep_routes)
 
 
-label_dep = rep(1, dim(data_to_fd)[1]) # 1 if not paris, 0 if paris
+label = rep(1, dim(data_to_fd)[1]) # 1 if not paris, 0 if paris
 for (i in 1:length(routes_no_na)){
   if (routes_no_na[i]%in%paris_dep_routes)
-    label_dep[i] = 0
+      label[i] = 0
 }
 
-# arrival station paris vs non paris
-paris_arr_routes = data$route[which(data$arrival_station%in%c('PARIS EST', 'PARIS LYON',
-                                                                'PARIS MONTPARNASSE','PARIS NORD'))]
-paris_arr_routes = unique(paris_arr_routes)
-
-label_arr = rep(1, dim(data_to_fd)[1]) # 1 if not paris, 0 if paris
-for (i in 1:length(routes_no_na)){
-  if (routes_no_na[i]%in%paris_arr_routes)
-    label_arr[i] = 0
-}
 
 
 #### PERMUTATIONAL FUNCTIONAL TEST FOR 2 POPULATIONS #####
 f_data_test = data_fd # functional data object
 
-label = label_dep
+# save indices of the groups
 i1 = which(label==0) #paris
 i2 = which(label==1) # not paris
 
