@@ -30,6 +30,8 @@ data=data[-which(data$route%in%nas),]
 
 
 #### Dataset for a variable ####
+#######FIRST PART#########
+##AVG DELAY ON ARRIVAL####
 variable=data$avg_delay_late_on_arrival # variabile di interesse
 
 years = unique(data$year)
@@ -234,15 +236,25 @@ for (i in 1:n_cols) {
   
 }
 
+alpha = .05
 #I have to sort them
 time_istants_bh = 1:47
 p_val_BH_sort = sort(p_val_BH)
 istants_BH_sort = order(p_val_BH)
+BH_correction = p.adjust(p_val_BH,method = 'fdr')
+test_rifiutati = which(BH_correction<alpha)
+indici_rifiutati = which( test_rifiutati %in% istants_BH_sort )
+#nothing
+
+
 
 quartz()
-plot(1:47,p_val_BH_sort,main='FDR-adjusted p-value function',xlab='time istants sorted for avg delay at arrival Paris vs no Paris',ylab='p-values')
-abline(a=0,b=1)
-abline(h=.05)
+plot(1:47,p_val_BH_sort,main='FDR-adjusted p-value function',
+     xlab='time istants sorted for avg delay at arrival Paris vs no Paris',
+     ylab='Unadjusted p-values',pch=16)
+abline(a=0,b=alpha/47)
+abline(h=alpha)
+#points(1:length(indici_rifiutati),p_val_BH_sort[indici_rifiutati],col='red',pch=16)
 
 #for avg delay at arrival: we do not rejected anywhere: same median
 
@@ -252,7 +264,7 @@ abline(h=.05)
 
 
 
-
+##########SECOND PART########
 #percentage of cancelled train
 variable=data$num_greater_30_min_late/data$total_num_trips # variabile di interesse
 
@@ -458,14 +470,30 @@ for (i in 1:n_cols) {
   
 }
 
+alpha = .05
 #I have to sort them
 time_istants_bh = 1:47
 p_val_BH_sort = sort(p_val_BH)
 istants_BH_sort = order(p_val_BH)
+BH_correction = p.adjust(p_val_BH,method = 'fdr')
+test_rifiutati = which(BH_correction<alpha)
+indici_rifiutati = which( test_rifiutati %in% istants_BH_sort )
+
+
 
 quartz()
-plot(1:47,p_val_BH_sort,main='FDR-adjusted p-value function',xlab='time istants sorted for percentage of cancelled trains Paris vs no Paris',ylab='p-values')
-abline(a=0,b=1)
-abline(h=.05)
+plot(1:47,p_val_BH_sort,main='FDR-adjusted p-value function',xlab='time istants sorted for prop cancelled trains Paris vs no Paris',
+     ylab='Unadjusted p-values',pch=16)
+abline(a=0,b=alpha/47)
+abline(h=alpha)
+points(1:length(indici_rifiutati),p_val_BH_sort[indici_rifiutati],col='red',pch=16)
+points((length(indici_rifiutati)+1):n_cols,p_val_BH_sort[-indici_rifiutati],col='black',pch=16)
+legend("topleft", legend=levels(factor(c('Rejected','Accepted'))), fill=c('black','red'), cex=.7)
 
-#for percentage of train cancelled: we do not rejected anywhere: same median
+
+#for percentage of train cancelled: we reject somewhere:
+# the real istants in which you reject are in test_rifiutati
+#TODO: PLOTTARE I DUE DATASET FUNCTIONAL EVIDENZIANDO DOVE SI RIFIUTA
+
+
+
