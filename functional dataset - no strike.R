@@ -31,6 +31,7 @@ data=data[-which(data$route%in%nas),]
 #### Dataset for a variable ####
 variable=data$num_of_canceled_trains/data$total_num_trips # variabile di interesse
 
+
 years = unique(data$year)
 months = unique(data$month)
 num_tratte = length(unique(data$route))
@@ -49,11 +50,15 @@ for (k in 1:num_tratte) {
 
 
 data_to_fd = data.frame(data_to_fd)
+#
 # removing strikes
-data_to_fd = data_to_fd[,-c(15,16,18,39,40,41,42,43)]
 
+ data_to_fd = data_to_fd[,-c(15,16,18,39,40,41,42,43)]
+
+
+n_cols = dim(data_to_fd)[2]
 rownames(data_to_fd) = r
-colnames(data_to_fd) = 1:39
+colnames(data_to_fd) = 1:n_cols
 
 # qua salvo le tratte con degli NA, ma probabilmente non serve
 na.indices = NULL
@@ -70,7 +75,7 @@ data_to_fd = data_to_fd[-na.indices,]
 routes_no_na = r[-na.indices]
 
 #### Conversion to a functional dataset ####
-data_fd = fData(1:39, data_to_fd)
+data_fd = fData(1:n_cols, data_to_fd)
 x11()
 plot(data_fd)
 
@@ -175,4 +180,5 @@ abline(v=T0,col='green', lwd=3)
 x11()
 plot(ecdf(T0_perm), xlim=range(c(T0, T0_perm)))
 abline(v=T0,col='green', lwd=3)
+
 
