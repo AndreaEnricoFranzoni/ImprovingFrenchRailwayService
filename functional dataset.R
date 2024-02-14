@@ -143,7 +143,7 @@ for (i in 1:length(routes_no_na)){
 #### PERMUTATIONAL FUNCTIONAL TEST FOR 2 POPULATIONS #####
 f_data_test = data_fd # functional data object
 
-label = label_dep
+label = label_arr
 i1 = which(label==0) #paris
 i2 = which(label==1) # not paris
 
@@ -190,6 +190,8 @@ x11()
 plot(ecdf(T0_perm), xlim=range(c(T0, T0_perm)))
 abline(v=T0,col='green', lwd=3)
 
+
+# plot the median for the 2 groups!!!!!
 
 #
 #this was a global test: the idea now is to perform a local test to see if there are some istants in which 
