@@ -24,7 +24,7 @@ graphics.off()
 set.seed(21100)
 
 #### Data preprocessing ####
-data = read_excel('trains_update_2610.xlsx')
+data = read_excel('Data_by_month.xlsx')
 data= data[-which(data$avg_delay_all_arriving<(-30)),]
 data=data[,-c(9,13,17)]
 n=dim(data)[1]
@@ -98,12 +98,6 @@ x11()
 plot(1:11, CI_18[,1], ylim=c(0, max(CI_18)))
 points(1:11, CI_18[,2])
 segments(1:11,CI_18[,1], 1:11,CI_18[,2], col='red3')
-
-x11()
-plot(c(1,2,8,9,10,11), CI_18[c(1,2,8,9,10,11),1], ylim=range(CI_18[c(1,2,8,9,10,11),]))
-points(c(1,2,8,9,10,11), CI_18[c(1,2,8,9,10,11),2])
-segments(c(1,2,8,9,10,11),CI_18[c(1,2,8,9,10,11),1], c(1,2,8,9,10,11),CI_18[c(1,2,8,9,10,11),2], col='red3')
-
 
 #### 2017 ####
 CI_17 = matrix(NA, nrow=12, ncol=2)

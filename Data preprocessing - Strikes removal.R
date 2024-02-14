@@ -4,7 +4,7 @@ library(writexl)
 
 rm(list=ls())
 graphics.off()
-data=read_excel('trains_update_2610.xlsx')
+data=read_excel('Data_by_month.xlsx')
 data=data[-which(data$avg_delay_all_arriving<(-30)),]
 n=dim(data)[1]
 n
@@ -306,5 +306,5 @@ data_agg = rbind(data_2015,data_2016,data_2017, data_2018)
 
 for(i in 1:length(nas))
   data_agg=data_agg[-which(data_agg$route ==nas[i]),]                             # we drop all routes that exceed tolerance from the final dataset
-#write_xlsx(data_agg, 'aggregated_trains_by_year_nostrike_0402.xlsx')
+#write_xlsx(data_agg, 'Data_by_year_nostrikes.xlsx')
 

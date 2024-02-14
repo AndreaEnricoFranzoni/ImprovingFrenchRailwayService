@@ -3,7 +3,7 @@ library(dplyr)
 library(roahd)
 rm(list=ls())
 graphics.off()
-data=read_excel('trains_update_2610.xlsx')
+data=read_excel('Data_by_month.xlsx')
 
 #### Remove NAs ####
 data=data[-which(data$avg_delay_all_arriving<(-30)),]
@@ -58,7 +58,7 @@ n_cols = dim(data_to_fd)[2]
 rownames(data_to_fd) = r
 colnames(data_to_fd) = 1:n_cols
 
-# qua salvo le tratte con degli NA, ma probabilmente non serve
+# qua salvo le tratte con NA
 na.indices = NULL
 for (i in 1:dim(data_to_fd)[1]){
   for (j in 1:dim(data_to_fd)[2])
@@ -84,14 +84,6 @@ invisible(roahd::fbplot(data_fd, main="", Fvalue = 1.5, xlab='Month', ylab='Aver
 # save the indices of the outliers
 out.fbplot <- roahd::fbplot(data_fd, display = FALSE, Fvalue = 1.5)
 out.fbplot$ID_outliers
-
-# # outliergram (phase outliers)
-# x11()
-# outliergram(data_fd,  Fvalue = 1.5)
-# 
-# # save the indices of the outliers
-# out.outliergram <- outliergram(data_fd, Fvalue = 1.5, display = FALSE)
-# out.outliergram$ID_outliers
 
 mei = MEI(data_fd)
 mbd = MBD(data_fd)
@@ -247,15 +239,6 @@ abline(a=0,b=alpha/39, col='red')
 abline(h=alpha, col='blue')
 #points(1:length(indici_rifiutati),pfor _val_BH_sort[indici_rifiutati],col='red',pch=16)
 
-#for avg delay at arrival: 
-
-
-
-
-
-
-
-
 #### Test on arrival #####
 f_data_test = data_fd # functional data object
 
@@ -278,7 +261,6 @@ plot(f_data_test, col=colori, xlab='Month', ylab='Average delay late on arrival'
 points(1:median1$P, median1$values, col='forestgreen', type='l', lwd=3)
 points(1:median2$P, median2$values, col='purple4', type='l', lwd=3)
 legend(x='topright', legend=c('Arriving in Paris', 'Not arriving in Paris'), col = c('darkolivegreen2', 'purple'), lty=1)
-
 
 median_diff <- median1$values-median2$values
 T0=(sum(abs(median_diff))) # test statistic
@@ -367,17 +349,8 @@ abline(a=0,b=alpha/39, col='red')
 abline(h=alpha, col='blue')
 #points(1:length(indici_rifiutati),pfor _val_BH_sort[indici_rifiutati],col='red',pch=16)
 
-#for avg delay at arrival: 
-
-
-
-
-
-
-
-
 #### Section 2 ####
-data=read_excel('trains_update_2610.xlsx')
+data=read_excel('Data_by_month.xlsx')
 #### Remove NAs ####
 data=data[-which(data$avg_delay_all_arriving<(-30)),]
 
@@ -431,7 +404,7 @@ n_cols = dim(data_to_fd)[2]
 rownames(data_to_fd) = r
 colnames(data_to_fd) = 1:n_cols
 
-# qua salvo le tratte con degli NA, ma probabilmente non serve
+# qua salvo le tratte con NA
 na.indices = NULL
 for (i in 1:dim(data_to_fd)[1]){
   for (j in 1:dim(data_to_fd)[2])
@@ -456,14 +429,6 @@ invisible(roahd::fbplot(data_fd, main="", Fvalue = 1.5, xlab='Month', ylab='Prop
 out.fbplot <- roahd::fbplot(data_fd, display = FALSE, Fvalue = 1.5)
 out.fbplot$ID_outliers
 
-# # outliergram (phase outliers)
-# x11()
-# outliergram(data_fd,  Fvalue = 1.5)
-# 
-# # save the indices of the outliers
-# out.outliergram <- outliergram(data_fd, Fvalue = 1.5, display = FALSE)
-# out.outliergram$ID_outliers
-
 mei = MEI(data_fd)
 mbd = MBD(data_fd)
 
@@ -485,7 +450,7 @@ outliers
 
 
 #### Section 3 ####
-data=read_excel('trains_update_2610.xlsx')
+data=read_excel('Data_by_month.xlsx')
 #### Remove NAs ####
 data=data[-which(data$avg_delay_all_arriving<(-30)),]
 
@@ -539,7 +504,7 @@ n_cols = dim(data_to_fd)[2]
 rownames(data_to_fd) = r
 colnames(data_to_fd) = 1:n_cols
 
-# qua salvo le tratte con degli NA, ma probabilmente non serve
+# qua salvo le tratte con NA
 na.indices = NULL
 for (i in 1:dim(data_to_fd)[1]){
   for (j in 1:dim(data_to_fd)[2])
@@ -558,21 +523,11 @@ data_fd = fData(1:n_cols, data_to_fd)
 x11()
 plot(data_fd, cex.lab=1.2, cex.axis=1.2, xlab='Month', ylab='Proportion of cancellations')
 
-
-
 x11()
 invisible(roahd::fbplot(data_fd, main="", Fvalue = 1.5, xlab='Month', ylab='Proportion of cancellations',cex.lab=1.2, cex.axis=1.2))
 # save the indices of the outliers
 out.fbplot <- roahd::fbplot(data_fd, display = FALSE, Fvalue = 1.5)
 out.fbplot$ID_outliers
-
-# # outliergram (phase outliers)
-# x11()
-# outliergram(data_fd,  Fvalue = 1.5)
-# 
-# # save the indices of the outliers
-# out.outliergram <- outliergram(data_fd, Fvalue = 1.5, display = FALSE)
-# out.outliergram$ID_outliers
 
 mei = MEI(data_fd)
 mbd = MBD(data_fd)

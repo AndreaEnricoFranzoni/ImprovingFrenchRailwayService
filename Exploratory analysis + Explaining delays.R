@@ -21,7 +21,7 @@ rm(list=ls())
 graphics.off()
 
 
-data = read_excel('aggregated_trains_by_year_2701.xlsx')
+data = read_excel('Data_by_year.xlsx')
 
 n = dim(data)[1]
 
@@ -53,26 +53,6 @@ x11()
 boxplot(avg_delay_arr~year, col=unique(col_years), xlab = 'Year', ylab = 'Average delay at arrival',
         cex.lab = 1.2, cex.axis=1.2)
 
-#### Exploratory plots ####
-x11()
-plot(data$avg_delay_all_departing, data$avg_delay_all_arriving, col=col_years, pch=16,
-     xlab='Average delay at departure', ylab='Average delay at arrival')
-legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=.7)
-x11()
-plot(data$journey_time_avg, data$avg_delay_all_arriving, col=col_years, pch=16)
-legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=.7)
-x11()
-plot(data$total_num_trips, data$avg_delay_all_arriving, col=col_years, pch=16)
-legend("topleft", legend=levels(year), fill=unique(col_years), cex=.7)
-x11()
-plot(perc_canc[i_2015], data$avg_delay_all_arriving[i_2015], col=col_years, pch=16)
-legend("topleft", legend=levels(year), fill=unique(col_years), cex=.7)
-
-x11()
-plot(year, perc_canc)
-
-# We observe some trends and some dependence across different years
-# Num trips seems not relevant to explain the average delay at arrival
 
 #### ANOVA ####
 g= nlevels(year)
@@ -124,7 +104,7 @@ B = 1e3
 alpha = 0.05
 
 # Bootstrap T-intervals for avg delay at arrival
-variable=avg_delay_arr#-avg_delay_dep
+variable=avg_delay_arr
 
 BootstrapCI = function(variable, alpha, B, indexes, var_name){
 k=4 # Bonferroni correction for 4 years
@@ -242,144 +222,33 @@ return(CI_avg_delay_arr)
 set.seed(2024)
 CI = BootstrapCI(variable, alpha, B, indexes, 'Mean average delay at arrival (min)')
 CI
+
+#### Exploratory plots ####
+x11()
+plot(data$avg_delay_all_departing, data$avg_delay_all_arriving, col=col_years, pch=16,
+     xlab='Average delay at departure', ylab='Average delay at arrival')
+legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=.7)
+x11()
+plot(data$journey_time_avg, data$avg_delay_all_arriving, col=col_years, pch=16)
+legend("topleft", legend=levels(as.factor(data$year)), fill=unique(col_years), cex=.7)
+x11()
+plot(data$total_num_trips, data$avg_delay_all_arriving, col=col_years, pch=16)
+legend("topleft", legend=levels(year), fill=unique(col_years), cex=.7)
+
+# We observe some trends and some dependence across different years
+# Num trips seems not relevant to explain the average delay at arrival
+
+
 #### Parametric model ####
 # We observe that the observations are not iid, there is a temporal dependence for observations of the same route
 
 initial_model = lm(avg_delay_arr ~ avg_delay_dep:year + avg_journey:year + year)
 summary(initial_model)
 shapiro.test(initial_model$residuals)
-x11()
-par(mfrow=c(2,2))
+
 x11()
 par(mfrow=c(1,2))
 plot(initial_model, which=1)
 plot(initial_model, which=2)
 
 vif(initial_model)
-#### LMM ####
-col_route = rainbow(length(unique(data$route)))
-x11()
-boxplot(initial_model$residuals ~ as.factor(data$route), col=col_route)
-
-# We observe that the residuals are really different for each route
-x11()
-boxplot(initial_model$residuals ~ year, col=unique(col_years))
-
-# Homoschedastic residuals, but different correlation for the delay obtained from the same route
-route=as.factor(data$route)
-year_num=as.numeric(year)
-mixed_model = gls(avg_delay_arr ~ avg_delay_dep + avg_journey + year, correlation = corSymm(form= ~year_num|route))
-summary(mixed_model)
-intervals(mixed_model, which='var-cov')
-
-var_cov = getVarCov(mixed_model, individual = 'METZ - PARIS EST')
-var_cov =as.matrix(var_cov)
-
-mixed_model_AR = gls(avg_delay_arr ~ avg_delay_dep + avg_journey + year, correlation = corAR1(form= ~year_num|route))
-summary(mixed_model_AR)
-intervals(mixed_model_AR, which='var-cov')
-
-anova(mixed_model_AR, mixed_model)
-
-x11()
-plot(mixed_model)
-
-x11()
-plot(mixed_model, resid(., type='p')~fitted(.)| year)
-
-# Since residuals don't look good, we try to add also a random intercept in the routes
-mixed_model = lmer(avg_delay_arr ~ avg_delay_dep + avg_journey + year + (1|route))
-summary(mixed_model)
-
-confint(mixed_model)
-
-x11()
-dotplot(ranef(mixed_model, condVar=T))
-
-x11()
-plot(mixed_model, resid(., type='pearson')~fitted(.)| year)
-
-#### GAM ####
-model_gam_inter = gam(avg_delay_arr ~ s(avg_delay_dep, by=year, bs = 'cr') 
-                      + avg_journey:year + year)
-summary(model_gam_inter)
-x11()
-par(mfcol=c(2, 2))
-plot(model_gam_inter)
-
-
-
-#### Robust ####
-avg_dep = data$avg_delay_all_departing
-avg_arr = data$avg_delay_all_arriving
-canc_perc = data$num_of_canceled_trains/data$total_num_trips
-extreme_delay = data$num_greater_15_min_late/data$total_num_trips
-
-# 2015
-multiv_2015 = data.frame(avg_arr=avg_arr[i_2015], avg_dep=avg_dep[i_2015], cancelled_percentage=canc_perc[i_2015],
-                         extreme_delay=extreme_delay[i_2015], route=data$route[i_2015])
-N=dim(multiv_2015)[1]
-fit_MCD = covMcd(x = multiv_2015[,1:4], alpha = .75, nsamp = "best")
-fit_MCD
-
-ind_best_subset_2015 = fit_MCD$best
-ind_best_subset_2015
-
-ind_out_MCD_2015 = setdiff(1:N,fit_MCD$best)
-ind_out_MCD_2015
-multiv_2015$route[ind_out_MCD_2015]
-
-#2016
-multiv_2016 = data.frame(avg_arr=avg_arr[i_2016], avg_dep=avg_dep[i_2016], cancelled_percentage=canc_perc[i_2016],
-                         extreme_delay=extreme_delay[i_2016], route=data$route[i_2016])
-N=dim(multiv_2016)[1]
-fit_MCD = covMcd(x = multiv_2016[,1:4], alpha = .75, nsamp = "best")
-fit_MCD
-
-ind_best_subset_2016 = fit_MCD$best
-ind_best_subset_2016
-
-ind_out_MCD_2016 = setdiff(1:N,fit_MCD$best)
-ind_out_MCD_2016
-multiv_2016$route[ind_out_MCD_2016]
-
-#2017
-multiv_2017 = data.frame(avg_arr=avg_arr[i_2017], avg_dep=avg_dep[i_2017], cancelled_percentage=canc_perc[i_2017],
-                         extreme_delay=extreme_delay[i_2017], route=data$route[i_2017])
-N=dim(multiv_2017)[1]
-fit_MCD = covMcd(x = multiv_2017[,1:4], alpha = .75, nsamp = "best")
-fit_MCD
-
-ind_best_subset_2017 = fit_MCD$best
-ind_best_subset_2017
-
-ind_out_MCD_2017 = setdiff(1:N,fit_MCD$best)
-ind_out_MCD_2017
-multiv_2017$route[ind_out_MCD_2017]
-
-
-#2018
-multiv_2018 = data.frame(avg_arr=avg_arr[i_2018], avg_dep=avg_dep[i_2018], cancelled_percentage=canc_perc[i_2018],
-                         extreme_delay=extreme_delay[i_2018], route=data$route[i_2018])
-N=dim(multiv_2018)[1]
-fit_MCD = covMcd(x = multiv_2018[,1:4], alpha = .75, nsamp = "best")
-fit_MCD
-
-ind_best_subset_2018 = fit_MCD$best
-ind_best_subset_2018
-
-ind_out_MCD_2018 = setdiff(1:N,fit_MCD$best)
-ind_out_MCD_2018
-multiv_2018$route[ind_out_MCD_2018]
-
-
-x11()
-par(mfrow=c(3,2))
-plot(avg_delay_dep[i_2018], avg_delay_arr[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
-plot(avg_delay_dep[i_2018], canc_perc[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
-plot(avg_delay_dep[i_2018], extreme_delay[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
-plot(avg_delay_arr[i_2018], canc_perc[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
-plot(avg_delay_arr[i_2018], extreme_delay[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
-plot(canc_perc[i_2018], extreme_delay[i_2018], col=ifelse(1:n%in%ind_best_subset_2018,"black","red"),pch=16)
-
-
