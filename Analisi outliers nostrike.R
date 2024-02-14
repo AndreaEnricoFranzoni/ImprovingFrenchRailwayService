@@ -56,8 +56,8 @@ extreme_delay = data$num_greater_30_min_late/data$total_num_trips
 # The latter 2 covariates have an impact on the economical status of the company
 # Directly they are forced by law to refund, indirectly people are not keen to use trains again
 # We assume (unrealistic) that there are no intermediate stations because we have no data on them
-x_lim = c(0,0.06)
-y_lim = c(0,0.15)
+x_lim = c(0,0.041)
+y_lim = c(0,0.14)
 # Par 2x2 con anche segnate le medie e stessi xlim ylim (DA FARE)
 
 #2018
@@ -77,6 +77,11 @@ x11()
 plot(canc_perc[i_2018], extreme_delay[i_2018], col=ifelse(1:N%in%ind_out_MCD_2018,'red',"black"),pch=16,
      xlim=x_lim, ylim=y_lim)
 text(multiv_2018$cancelled_percentage[ind_out_MCD_2018], multiv_2018$extreme_delay[ind_out_MCD_2018], label=multiv_2018$route[ind_out_MCD_2018])
+
+x11()
+plot(canc_perc[i_2018], extreme_delay[i_2018], col=ifelse(1:n%in%ind_out_MCD_2018,'red',"black"),pch=20,
+     xlim=x_lim, ylim=y_lim, cex.lab=1.2, cex.axis=1.2, xlab='Proportion of cancellations', ylab='Proportion of trains with delay >30 min')
+points(fit_MCD_2018$center[1], fit_MCD_2018$center[2],pch=4, col='coral', lwd=3, cex=1.5)
 
 # In particular, Paris Lyon - Perpignan (A/R) is the worst outlier (index 31, 36)
 # Montpellier Lyon (22, 74) high cancellations
@@ -102,6 +107,12 @@ x11()
 plot(canc_perc[i_2017], extreme_delay[i_2017], col=ifelse(1:n%in%ind_out_MCD_2017,'red',"black"),pch=16,
      xlim=x_lim, ylim=y_lim)
 text(canc_perc[i_2017], extreme_delay[i_2017], label=1:N)
+
+x11()
+plot(canc_perc[i_2017], extreme_delay[i_2017], col=ifelse(1:n%in%ind_out_MCD_2017,'red',"black"),pch=20,
+     xlim=x_lim, ylim=y_lim, cex.lab=1.2, cex.axis=1.2, xlab='Proportion of cancellations', ylab='Proportion of trains with delay >30 min')
+points(fit_MCD_2017$center[1], fit_MCD_2017$center[2],pch=4, col='coral', lwd=3, cex=1.5)
+
 
 # In particular, Paris Lyon - Perpignan in this year is still an outlier, but with a low number of cancellations (index 38, 44)
 # Lille Marseille (index 22, 29) no particular relation but they are also present as outlier in 2018, 2016, 2015
@@ -132,7 +143,12 @@ plot(canc_perc[i_2016], extreme_delay[i_2016], col=ifelse(1:n%in%ind_out_MCD_201
      xlim=x_lim, ylim=y_lim)
 text(canc_perc[i_2016], extreme_delay[i_2016], label=1:N)
 
-# In that case also positive outliers are detected: in particular, no cancellation routes (da individuare)
+
+x11()
+plot(canc_perc[i_2016], extreme_delay[i_2016], col=ifelse(1:n%in%ind_out_MCD_2016,'red',"black"),pch=20,
+     xlim=x_lim, ylim=y_lim, cex.lab=1.2, cex.axis=1.2, xlab='Proportion of cancellations', ylab='Proportion of trains with delay >30 min')
+points(fit_MCD_2016$center[1], fit_MCD_2016$center[2],pch=4, col='coral', lwd=3, cex=1.5)
+
 # Paris Lyon - Perpignan (93, 105) has same levels of 2017
 # 75 (montparnasse tolouse)
 # 28 - 96(Paris Lyon Nice Ville A/R) 
@@ -157,6 +173,11 @@ x11()
 plot(canc_perc[i_2015], extreme_delay[i_2015], col=ifelse(1:n%in%ind_out_MCD_2015,'red',"black"),pch=16,
      xlim=x_lim, ylim=y_lim)
 text(canc_perc[i_2015], extreme_delay[i_2015], label=1:N)
+
+x11()
+plot(canc_perc[i_2015], extreme_delay[i_2015], col=ifelse(1:n%in%ind_out_MCD_2015,'red',"black"),pch=20,
+     xlim=x_lim, ylim=y_lim, cex.lab=1.2, cex.axis=1.2, xlab='Proportion of cancellations', ylab='Proportion of trains with delay >30 min')
+points(fit_MCD_2015$center[1], fit_MCD_2015$center[2],pch=4, col='coral', lwd=3, cex=1.5)
 
 # Paris Lyon - Perpignan (8, 104) has same levels of 2017, 2016 (not critical but outliers)
 # 77 - 65 (Paris Lyon - Annecy) high cancellations for the 2015
