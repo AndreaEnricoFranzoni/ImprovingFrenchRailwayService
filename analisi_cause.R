@@ -9,7 +9,7 @@ finestra_grafica = function(t){
   else 
     return(x11())
 }
-t=0 #per chiamare in automatico il quartz, mettere un qualsiasi altro valore per avere x11()
+t=1 #per chiamare in automatico il quartz, mettere un qualsiasi altro valore per avere x11()
 
 
 #Struttura
@@ -257,28 +257,18 @@ anova(gam(response_no_strike~1),model_no_strike,test="F") #pvalue: 6.353e-05: I 
 # x4: interazione_interne/esterne: funzione non lineare
 
 # effect of x3
-se.bands <- cbind(preds$fit +2* preds$se.fit ,preds$fit -2* preds$se.fit)
-
 min(x3_no_strike)
 max(x3_no_strike)
 sequence_x3_no_strike = seq(min(x3_no_strike),max(x3_no_strike),by=0.001)
-risposta_fitted = model_no_strike$coefficients[1] + sequence_x3_no_strike*model_no_strike$coefficients[2]
-#since I have gaussianity
-sd=9.036
-se.bands=cbind(risposta_fitted + 2* sd,risposta_fitted - 2* sd)
 finestra_grafica(t)
 plot(sequence_x3_no_strike,model_no_strike$coefficients[1] + sequence_x3_no_strike*model_no_strike$coefficients[2],
-     cex=0.01,
-     xlab='z3',ylab='26.69554 + 4.394391*z3',ylim=c(-0,60))
-abline(a = model_no_strike$coefficients[1], b = model_no_strike$coefficients[2], col = "black", cex=1)
-matlines(sequence_x3_no_strike,se.bands ,lwd =1, col =" black",lty =3)
-
+     xlab='x3',ylab='b1 + b2*x3',main='Average delay late on arrival vs x3')
 #all'aumentare dell'interazione fra rail_inf*traffic_man*rolling_stock rispetto che station_manag, aumenta la media
 #del ritardo medio: la magnitudo è notevole, a livello di quanto aumenti in effetti il ritardo
 
 #effect of x4
 finestra_grafica(t)
-plot(model_no_strike,xlab='z4',ylab='f4(z4)')
+plot(model_no_strike,xlab='x4',ylab='f4(x4)',main='Average delay late on arrival vs x4')
 # cresce se x4 <-1 o se x4 > -0.5: questo significa che se c'è un grande sbilanciamento di fattori: 
 # il ritardo medio aumenta , e anche velocemente, se cè il rapporto è minore di 0.3
 # il ritardo aumenta anche se il rapporto radice_4(cause_int_int)/cause_ext è circa maggiore di 0.6(1/radice(e))
@@ -325,29 +315,36 @@ p=2
 finestra_grafica(t)
 plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`)
 #robust bivariate
-MCD_rail_inf <- covMcd(x = Rail_infrastructure, alpha = .75, nsamp = "best") 
-finestra_grafica(t)
-plot(MCD_rail_inf,classic=TRUE)
+MCD_rail_inf <- covMcd(x = Rail_infrastructure, alpha = .75, nsamp = 2000) 
+# finestra_grafica(t)
+# plot(MCD_rail_inf,classic=TRUE)
 #trovo gli outliers
 ind_out_rail_inf <- (1:n_2018_no_strike)[MCD_rail_inf$mcd.wt==0]  #51
 
 ##metodo alternativo da non usare
-ind_out_rail_inf <- (1:n_2018_no_strike)[MCD_rail_inf$mcd.wt==0]  #51
-ind_obs_rail_inf <-
-  which(
-    mahalanobis(
-      x = Rail_infrastructure,
-      center = MCD_rail_inf$raw.center,
-      cov = MCD_rail_inf$raw.cov
-    ) <= qchisq(p = .975, df = p) #p=number of covariates
-  )
-ind_out_rail_inf = setdiff(1:n_2018_no_strike,ind_obs_rail_inf)  #30  51 103
+# ind_out_rail_inf <- (1:n_2018_no_strike)[MCD_rail_inf$mcd.wt==0]  #51
+# ind_obs_rail_inf <-
+#   which(
+#     mahalanobis(
+#       x = Rail_infrastructure,
+#       center = MCD_rail_inf$raw.center,
+#       cov = MCD_rail_inf$raw.cov
+#     ) <= qchisq(p = .975, df = p) #p=number of covariates
+#   )
+# ind_out_rail_inf = setdiff(1:n_2018_no_strike,ind_obs_rail_inf)  #30  51 103
 
 
 finestra_grafica(t)
-plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rail infrastructure',xlab='Due to rail infrastructure',ylab='Avg delay late on arrival',pch=16)
-points(Rail_infrastructure$`Rail infrastructure`[ind_out_rail_inf],Rail_infrastructure$`Avg delay late on arrival`[ind_out_rail_inf],col='red',pch=16)
-legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('black','red'), cex=.7)
+plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`,
+     col=ifelse(1:n%in%ind_out_rail_inf,'red',"black"),pch=20,
+      cex.lab=1.2, cex.axis=1.2, xlab='Proportion of trains delayed due to rail infrastructure', 
+     ylab='Average delay late on arrival')
+points(MCD_rail_inf$center[2], MCD_rail_inf$center[1], pch=4, col='coral', lwd=3, cex=1.5)
+
+finestra_grafica(t)
+plot(Rail_infrastructure$`Rail infrastructure`,Rail_infrastructure$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rail infrastructure',xlab='Due to rail infrastructure',ylab='Avg delay late on arrival')
+points(Rail_infrastructure$`Rail infrastructure`[ind_out_rail_inf],Rail_infrastructure$`Avg delay late on arrival`[ind_out_rail_inf],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
 ind_out_rail_inf
 Rail_infrastructure[ind_out_rail_inf,]
 #tratta 51 non la considererei tanto un outlier 'dannoso': anz, è un po' particolare perchè nonostante risenta così
@@ -361,27 +358,36 @@ summary(ltsReg(Rail_infrastructure$`Avg delay late on arrival`~Rail_infrastructu
 finestra_grafica(t)
 plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`)
 #robust bivariate
-MCD_traf_man <- covMcd(x = Traffic_management, alpha = .5, nsamp = "best") 
-finestra_grafica(t)
-plot(MCD_traf_man,classic=TRUE)
+MCD_traf_man <- covMcd(x = Traffic_management, alpha = .75, nsamp = 2000) 
+# finestra_grafica(t)
+# plot(MCD_traf_man,classic=TRUE)
 ind_out_traf_man <- (1:n_2018_no_strike)[MCD_traf_man$mcd.wt==0] #33 39
 
 ##
-ind_obs_traf_man <-
-  which(
-    mahalanobis(
-      x = Traffic_management,
-      center = MCD_traf_man$raw.center,
-      cov = MCD_traf_man$raw.cov
-    ) <= qchisq(p = .975, df = p) #p=number of covariates
-  )
-ind_out_traf_man= setdiff(1:n_2018_no_strike,ind_obs_traf_man) #33 39 77 87
+# ind_obs_traf_man <-
+#   which(
+#     mahalanobis(
+#       x = Traffic_management,
+#       center = MCD_traf_man$raw.center,
+#       cov = MCD_traf_man$raw.cov
+#     ) <= qchisq(p = .975, df = p) #p=number of covariates
+#   )
+# ind_out_traf_man= setdiff(1:n_2018_no_strike,ind_obs_traf_man) #33 39 77 87
 
 
 finestra_grafica(t)
-plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to traffic management',xlab='Due to traffic management',ylab='Avg delay late on arrival',pch=16)
-points(Traffic_management$`Traffic management`[ind_out_traf_man],Traffic_management$`Avg delay late on arrival`[ind_out_traf_man],col='red',pch=16)
-legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('black','red'), cex=.7)
+plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`,
+     col=ifelse(1:n%in%ind_out_traf_man,'red',"black"),pch=20,
+     cex.lab=1.2, cex.axis=1.2, xlab='Proportion of trains delayed due to traffic management', 
+     ylab='Average delay late on arrival')
+points(MCD_traf_man$center[2], MCD_traf_man$center[1], pch=4, col='coral', lwd=3, cex=1.5)
+
+
+
+finestra_grafica(t)
+plot(Traffic_management$`Traffic management`,Traffic_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to traffic management',xlab='Due to traffic management',ylab='Avg delay late on arrival')
+points(Traffic_management$`Traffic management`[ind_out_traf_man],Traffic_management$`Avg delay late on arrival`[ind_out_traf_man],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
 ind_out_traf_man
 Traffic_management[ind_out_traf_man,]
 #in questo caso, si può imputare alla tratta 33 il fatto di avere un ritardo elevato per questo motivo: onestamente non saprei
@@ -396,26 +402,35 @@ summary(ltsReg(Traffic_management$`Avg delay late on arrival`~Traffic_management
 finestra_grafica(t)
 plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`)
 #robust bivariate
-MCD_rol_sto <- covMcd(x = Rolling_stock, alpha = .75, nsamp = "best") 
-finestra_grafica(t)
-plot(MCD_rol_sto,classic=TRUE)
-ind_out_rol_sto <- (1:n_2018_no_strike)[MCD_rol_sto$mcd.wt==0] #13 14 19 26 28 44 54 74 75 76 88 89
+MCD_rol_sto <- covMcd(x = Rolling_stock, alpha = .75, nsamp = 2000) 
+# finestra_grafica(t)
+# plot(MCD_rol_sto,classic=TRUE)
+ind_out_rol_sto <- (1:n_2018_no_strike)[MCD_rol_sto$mcd.wt==0] #3 14 19 26 28 44 54 74 75 76 88 89
 
 ##
-ind_obs_rol_stock <-
-  which(
-    mahalanobis(
-      x = Rolling_stock,
-      center = MCD_rol_sto$raw.center,
-      cov = MCD_rol_sto$raw.cov
-    ) <= qchisq(p = .975, df = p) #p=number of covariates
-  )
-ind_out_rol_sto = setdiff(1:n_2018_no_strike,ind_obs_rol_stock) #13  14  19  26  28  44  54  63  74  75  76  88  89 101
+# ind_obs_rol_stock <-
+#   which(
+#     mahalanobis(
+#       x = Rolling_stock,
+#       center = MCD_rol_sto$raw.center,
+#       cov = MCD_rol_sto$raw.cov
+#     ) <= qchisq(p = .975, df = p) #p=number of covariates
+#   )
+# ind_out_rol_sto = setdiff(1:n_2018_no_strike,ind_obs_rol_stock) #13  14  19  26  28  44  54  63  74  75  76  88  89 101
+# 
 
 finestra_grafica(t)
-plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rolling stock',xlab='Due to rolling stock',ylab='Avg delay late on arrival',pch=16)
-points(Rolling_stock$`Rolling stock`[ind_out_rol_sto],Rolling_stock$`Avg delay late on arrival`[ind_out_rol_sto],col='red',pch=16)
-legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('black','red'), cex=.7)
+plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`,
+     col=ifelse(1:n%in%ind_out_rol_sto,'red',"black"),pch=20,
+     cex.lab=1.2, cex.axis=1.2, xlab='Proportion of trains delayed due to rolling stock', 
+     ylab='Average delay late on arrival')
+points(MCD_rol_sto$center[2], MCD_rol_sto$center[1], pch=4, col='coral', lwd=3, cex=1.5)
+
+
+finestra_grafica(t)
+plot(Rolling_stock$`Rolling stock`,Rolling_stock$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to rolling stock',xlab='Due to rolling stock',ylab='Avg delay late on arrival')
+points(Rolling_stock$`Rolling stock`[ind_out_rol_sto],Rolling_stock$`Avg delay late on arrival`[ind_out_rol_sto],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
 ind_out_rol_sto
 Rolling_stock[ind_out_rol_sto,]
 #in questo caso non sembra esserci una relazione tra alta proporzione e alto ritardo: i punti effettivamente fuori
@@ -429,26 +444,35 @@ summary(ltsReg(Rolling_stock$`Avg delay late on arrival`~Rolling_stock$`Rolling 
 finestra_grafica(t)
 plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`)
 #robust bivariate
-MCD_stat_man <- covMcd(x = Station_management, alpha = .75, nsamp = "best") 
-finestra_grafica(t)
-plot(MCD_stat_man,classic=TRUE)
+MCD_stat_man <- covMcd(x = Station_management, alpha = .75, nsamp = 2000) 
+# finestra_grafica(t)
+# plot(MCD_stat_man,classic=TRUE)
 ind_out_stat_man <- (1:n_2018_no_strike)[MCD_stat_man$mcd.wt==0] #23 54 92
 
 ##
-ind_obs_stat_man <-
-  which(
-    mahalanobis(
-      x = Station_management,
-      center = MCD_stat_man$raw.center,
-      cov = MCD_stat_man$raw.cov
-    ) <= qchisq(p = .975, df = p) #p=number of covariates
-  )
-ind_out_stat_man = setdiff(1:n_2018_no_strike,ind_obs_stat_man) #23  54  92  94 105
+# ind_obs_stat_man <-
+#   which(
+#     mahalanobis(
+#       x = Station_management,
+#       center = MCD_stat_man$raw.center,
+#       cov = MCD_stat_man$raw.cov
+#     ) <= qchisq(p = .975, df = p) #p=number of covariates
+#   )
+# ind_out_stat_man = setdiff(1:n_2018_no_strike,ind_obs_stat_man) #23  54  92  94 105
+
 
 finestra_grafica(t)
-plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to station management',xlab='Due to station management',ylab='Avg delay late on arrival',pch=16)
-points(Station_management$`Station management`[ind_out_stat_man],Station_management$`Avg delay late on arrival`[ind_out_stat_man],col='red',pch=16)
-legend("topright", legend=levels(factor(c('No outliers','Outliers'))), fill=c('black','red'), cex=.7)
+plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`,
+     col=ifelse(1:n%in%ind_out_stat_man,'red',"black"),pch=20,
+     cex.lab=1.2, cex.axis=1.2, xlab='Proportion of trains delayed due to station management', 
+     ylab='Average delay late on arrival')
+points(MCD_stat_man$center[2], MCD_stat_man$center[1], pch=4, col='coral', lwd=3, cex=1.5)
+
+
+finestra_grafica(t)
+plot(Station_management$`Station management`,Station_management$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to station management',xlab='Due to station management',ylab='Avg delay late on arrival')
+points(Station_management$`Station management`[ind_out_stat_man],Station_management$`Avg delay late on arrival`[ind_out_stat_man],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
 ind_out_stat_man
 Station_management[ind_out_stat_man,]
 #in questo caso non sembra esserci una relazione tra alta proporzione e alto ritardo: i punti effettivamente fuori
@@ -462,27 +486,37 @@ summary(ltsReg(Station_management$`Avg delay late on arrival`~Station_management
 finestra_grafica(t)
 plot(Externals$Externals,Externals$`Avg delay late on arrival`)
 #robust bivariate
-MCD_ex <- covMcd(x= Externals, alpha = .5, nsamp = "best") 
-#MCD_ex <- covMcd(x= Externals, alpha = .75, nsamp = "best") 
-finestra_grafica(t)
-plot(MCD_ex,classic=TRUE)
+#MCD_ex <- covMcd(x= Externals, alpha = .5, nsamp = "best") 
+MCD_ex <- covMcd(x= Externals, alpha = .75, nsamp = 2000) 
+# finestra_grafica(t)
+# plot(MCD_ex,classic=TRUE)
 ind_out_ex <- (1:n_2018_no_strike)[MCD_ex$mcd.wt==0] # 0.5: 27 38 48 52 98                     0.75: nulla
 
 ##
-ind_obs_ex <-
-  which(
-    mahalanobis(
-      x = Externals,
-      center = MCD_ex$raw.center,
-      cov = MCD_ex$raw.cov
-    ) <= qchisq(p = .975, df = p) #p=number of covariates
-  )
-ind_out_ex = setdiff(1:n_2018_no_strike,ind_obs_ex) # 0.5: 27 37 38 48 52 61 76 89 97 98       0.75: 48
+# ind_obs_ex <-
+#   which(
+#     mahalanobis(
+#       x = Externals,
+#       center = MCD_ex$raw.center,
+#       cov = MCD_ex$raw.cov
+#     ) <= qchisq(p = .975, df = p) #p=number of covariates
+#   )
+# ind_out_ex = setdiff(1:n_2018_no_strike,ind_obs_ex) # 0.5: 27 37 38 48 52 61 76 89 97 98       0.75: 48
+
+
 
 finestra_grafica(t)
-plot(Externals$Externals,Externals$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to external causes',xlab='Due to external causes',ylab='Avg delay late on arrival',pch=16)
-points(Externals$Externals[ind_out_ex],Externals$`Avg delay late on arrival`[ind_out_ex],col='red',pch=16)
-legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('black','red'), cex=.7)
+plot(Externals$Externals,Externals$`Avg delay late on arrival`,
+     col=ifelse(1:n%in%ind_out_ex,'red',"black"),pch=20,
+     cex.lab=1.2, cex.axis=1.2, xlab='Proportion of trains delayed due to external causes', 
+     ylab='Average delay late on arrival')
+points(MCD_ex$center[2], MCD_ex$center[1], pch=4, col='coral', lwd=3, cex=1.5)
+
+
+finestra_grafica(t)
+plot(Externals$Externals,Externals$`Avg delay late on arrival`,main='Avg delay late on arrival vs due to external causes',xlab='Due to external causes',ylab='Avg delay late on arrival')
+points(Externals$Externals[ind_out_ex],Externals$`Avg delay late on arrival`[ind_out_ex],col='red')
+legend("topleft", legend=levels(factor(c('No outliers','Outliers'))), fill=c('blue','red'), cex=.7)
 ind_out_ex
 Externals[ind_out_ex,]
 #in questo caso non sembra esserci una relazione tra alta proporzione e alto ritardo: i punti effettivamente fuori
@@ -499,6 +533,7 @@ data_no_strike_2018[ind_out_rail_inf,]$route
 ind_out_traf_man
 data_no_strike_2018[ind_out_traf_man,]$route
 #Outliers rolling stock
+length(ind_out_rol_sto)
 ind_out_rol_sto
 data_no_strike_2018[ind_out_rol_sto,]$route #interessante: molte tratte che partono da Parigi ne risentono
 #Outliers station management
