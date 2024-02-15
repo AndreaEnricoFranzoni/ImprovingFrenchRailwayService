@@ -16,7 +16,7 @@ t=1 #per chiamare in automatico il quartz, mettere un qualsiasi altro valore per
 
 #no scioperi
 data_no_strike = read_excel('Data_by_year_nostrikes.xlsx')
-
+i_2018=which(data_no_strike$year==2018)
 cause_2018_no_strike=data.frame(data_no_strike$delay_cause_rail_infrastructure[i_2018],
                                 data_no_strike$delay_cause_traffic_management[i_2018],
                                 data_no_strike$delay_cause_rolling_stock[i_2018],
