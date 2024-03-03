@@ -148,8 +148,8 @@ colori = rep('darkolivegreen2', n1+n2)
 colori[i2] = 'purple'
 x11()
 plot(f_data_test, col=colori, xlab='Month', ylab='Average delay late on arrival',cex.lab=1.2, cex.axis=1.2)
-points(1:median1$P, median1$values, col='forestgreen', type='l', lwd=3)
-points(1:median2$P, median2$values, col='purple4', type='l', lwd=3)
+points(1:median1$P, median1$values, col='darkolivegreen2', type='l', lwd=4)
+points(1:median2$P, median2$values, col='purple4', type='l', lwd=4)
 legend(x='topright', legend=c('Departing from Paris', 'Not departing from Paris'), col = c('darkolivegreen2', 'purple'), lty=1)
 
 
@@ -258,8 +258,8 @@ colori = rep('darkolivegreen2', n1+n2)
 colori[i2] = 'purple'
 x11()
 plot(f_data_test, col=colori, xlab='Month', ylab='Average delay late on arrival',cex.lab=1.2, cex.axis=1.2)
-points(1:median1$P, median1$values, col='forestgreen', type='l', lwd=3)
-points(1:median2$P, median2$values, col='purple4', type='l', lwd=3)
+points(1:median1$P, median1$values, col='darkolivegreen2', type='l', lwd=4)
+points(1:median2$P, median2$values, col='purple4', type='l', lwd=4)
 legend(x='topright', legend=c('Arriving in Paris', 'Not arriving in Paris'), col = c('darkolivegreen2', 'purple'), lty=1)
 
 median_diff <- median1$values-median2$values
