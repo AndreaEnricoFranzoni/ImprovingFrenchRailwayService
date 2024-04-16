@@ -12,3 +12,4 @@ Data preprocessing - strikes removal: aggregates data from 'Data_by_month.xlsx' 
 Cancellations and extreme delays - no strikes:  fits again a bivariate robust analysis on the newly obtained dataset <br />
 Cause analysis (multivariate + compositional): fits a bivariate robust analysis on the causes and deals with compositional data nature <br />
 Final developments: performs functional analysis for different variables of interest to confirm the previous results <br />
+report.pdf: statistical considerations and results' interpretation
